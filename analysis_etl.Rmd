@@ -1,0 +1,133 @@
+---
+title: "Fission Monitoring Nightly: Analysis ETL"
+author: "Corey Dow-Hygelund, Mozilla Data Science"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    mathjax: null
+    toc: true
+    toc_collapsed: false
+    toc_depth: 5
+    number_sections: true
+    theme: cosmo
+params:
+    args: !r list()
+
+---
+
+<style>
+body {
+    line-height: 1.4em;
+    width: 100%;
+    }
+.plotly {
+    text-align: center;
+    width: 75vw;
+    position: relative;
+    margin-left: calc((100% - 75vw)/2);
+}
+.zimg img {
+    text-align: center;
+    width: 75vw;
+    position: relative;
+    margin-left: calc((100% - 75vw)/2);
+}
+.r {
+    background-color: white;
+    border: 0;
+        }
+        
+pre code, pre, code {
+  white-space: pre !important;
+  overflow-x: scroll !important;
+  word-break: keep-all !important;
+  word-wrap: initial !important;
+}
+.caption {
+    font-size: 80%;
+    font-style: italic;
+    font-weight:bold;
+        }
+
+caption {
+    font-size: 80%;
+    font-style: italic;
+    font-weight: bold;
+        }
+
+h3, .h3 {
+    margin-top: 100px;
+    }
+    
+
+</style>
+
+
+```{r sources}
+source('params.R')
+source('query.R')
+source('stats.R')
+```
+
+
+```{r imports}
+library(bigrquery)
+library(dlyr)
+library(data.table)
+```
+
+```{r helpers}
+##FIXME: Move these that persist after pipeline is finalized 
+
+# Single clients from older builds in Nightly dev table
+remove_single_builds <- function(df) {
+  bunk_builds <- df %>% 
+    group_by(build_id) %>% 
+    summarize(nbranches = length(unique(branch)), .groups = 'drop') %>% 
+    filter(nbranches < 2)
+  return(
+    df %>% 
+      filter(!build_id %in% bunk_builds$build_id)
+  )
+}
+```
+
+```{r main_import}
+options(scipen = 20) # bigrquery bug: https://github.com/r-dbi/bigrquery/issues/395 
+
+main_query <- build_main_query(probes.hist, slug, main_tbl)
+main <- bq_project_query(project_id, main_query)
+main.df <- bq_table_download(main)
+```
+
+```{r crashes_import}
+# place_holder
+```
+
+```{r}
+hist_query <- build_hist_query('payload.histograms.fx_new_window_ms', slug, main_tbl)
+hist <- bq_project_query(project_id, hist_query)
+hist.df <- bq_table_download(hist) %>%
+  remove_single_builds() %>%
+  as.data.table()
+```
+
+
+```{r}
+result.df <- summarize.hist(as.data.table(hist.df))
+```
+
+
+# Thoughts
+
+This style of "experiment" is not a true experiment, in that it doesn't have a hypothesis. It is monitoring, build by build, of large-scale, underlying changes of Firefox.
+
+# TODO
+
+* Add total number of unique users per branch per build
+* should "MEMORY_TOTAL" = 'payload.processes.histograms.memory_total' and not content?
+* sguha limits build_id observation window to 10 days. 
+
+# FIXME
+
+* `FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_PER_LOADED_TABS` is a composition of many histograms. Only using `payload.histograms.fx_number_of_unique_site_origins_per_loaded_tabs_1` for POC. 
