@@ -85,11 +85,25 @@ build_main_query <- function(probes.hist, slug, tbl){
   return(main_query)
 }
 
-build_hist_query <- function(probe.hist, slug, tbl, hist_query_base = hist_query_base){
-  return(glue(hist_query_base, 
+build_hist_query <- function(probe.hist, slug, tbl, hist_query_base. = hist_query_base){
+  return(glue(hist_query_base., 
               probe_hist = probe.hist,
               tbl = tbl,
               )
   )
+}
+
+generate_shell_export_tblname <- function(s) {
+  ## `moz-fx-data-shared-prod`.analysis.sguha_ds_283
+  ## moz-fx-data-shared-prod:analysis.sguha_ds_283
+  y <- gregexpr("^`[a-zA-Z-]+`", s)[[1]]
+  if (y > 0) {
+    s2 <- attr(y, "match.length")
+    u <- substr(s, s2 + 2, nchar(s))
+    o <- substr(s, y + 1, s2 - 1)
+    return(glue("{o}:{u}"))
+  } else {
+    stop(glue("Could not find the thing i want in {s}"))
+  }
 }
 

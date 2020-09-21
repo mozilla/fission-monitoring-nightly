@@ -21,7 +21,7 @@ probes.hist <- list(
   "FX_TAB_SWITCH_COMPOSITE_E10S_MS" = 'payload.histograms.fx_tab_switch_composite_e10s_ms',
   "KEYPRESS_PRESENT_LATENCY_MS" = 'payload.histograms.keypress_present_latency',
   "INPUT_EVENT_RESPONSE_MS" = 'payload.histograms.input_event_response_ms',
-  "MEMORY_TOTAL" = 'payload.processes.content.histograms.memory_total',
+  "MEMORY_TOTAL" = 'payload.histograms.memory_total',
   "CYCLE_COLLECTOR_MAX_PAUSE" = 'payload.histograms.cycle_collector_max_pause',
   "GC_MAX_PAUSE_2" = 'payload.histograms.gc_max_pause_ms_2',
   "GC_MS" = 'payload.histograms.gc_ms',
