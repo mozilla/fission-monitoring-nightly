@@ -113,13 +113,17 @@ Query for previously processed builds. Apply this as a query filter to retrieve 
 **TODO** There are several methods necessary for handling histograms. This will require a map of probe_name -> hist_agg_method. Defaulting to `summarize.hist` for the moment. 
 
 
-```{r hist_agg}
+```{r hist_agg_var}
 results.hist <- list()
-hists.raw <- list()  #TODO: For initial EDA: remove after histograms well-understood
+hists.raw <- list()  #TODO: For initial EDA: remove after histograms well-understood\
+```
+
+```{r hist_agg}
 print('Processing histograms')
 for(probe in names(probes.hist)){
-  if (probe %in% results.hist){
-    print(probe)
+  if (!probe %in% names(results.hist)){
+    if(probe == 'GC_MS') next
+      print(probe)
     hist_query <- build_hist_query(probes.hist[[probe]], slug, main_tbl)
     hist <- bq_project_query(project_id, hist_query)
     hist.df <- bq_table_download(hist) %>%
@@ -135,7 +139,7 @@ for(probe in names(probes.hist)){
   }
 }
 
-save(hists.raw, results.hist, file='hists_raw.df')
+save(hists.raw, results.hist, file='hists_raw.2df')
 ```
 
 # Scalar Aggregation
@@ -161,7 +165,7 @@ bq_table(project = project_id,
          # dataset = "analysis",
          dataset = 'cdowhygelund',
          table   = "fission_monitoring_analyzed_v1") %>%
-  bq_table_upload(values = results.hist.df,
+  bq_table_upload(values = final.df,
                   create_disposition = "CREATE_IF_NEEDED",
                   write_disposition = "WRITE_APPEND",
                   fields = as_bq_fields(final.df) )
@@ -188,7 +192,7 @@ bq_table(project = project_id,
 * should "MEMORY_TOTAL" = 'payload.processes.histograms.memory_total' and not content?
 
 # FIXME
-
+* GC_MS is an issue in data pull
 * Exported table should be in `moz-fx-data-shared-prod`. Issues regarding `bigrquery` and credentials. 
 
 * `FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_PER_LOADED_TABS` is a composition of many histograms. Only using `payload.histograms.fx_number_of_unique_site_origins_per_loaded_tabs_1` for POC. 

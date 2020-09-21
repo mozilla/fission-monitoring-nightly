@@ -3,9 +3,11 @@ project_id = 'moz-fx-data-bq-data-science'
 
 #### Experiment-specific ####
 
-tbl.main <- '`moz-fx-data-shared-prod.analysis`.fission_monitoring_main_v1'
+tbl.main <- '`moz-fx-data-shared-prod`.analysis.fission_monitoring_main_v1'
 
-tbl.crashes <- '`moz-fx-data-shared-prod.analysis`.fission_monitoring_crashes_v1'
+tbl.crashes <- '`moz-fx-data-shared-prod`.analysis.fission_monitoring_crashes_v1'
+
+tbl.analyzed <- '`moz-fx-data-shared-prod`.analysis.fission_monitoring_crashes_v1'
 
 slug <- 'bug-1622934-pref-webrender-continued-v2-nightly-only-nightly-76-80'
 
@@ -24,7 +26,7 @@ probes.hist <- list(
   "MEMORY_TOTAL" = 'payload.histograms.memory_total',
   "CYCLE_COLLECTOR_MAX_PAUSE" = 'payload.histograms.cycle_collector_max_pause',
   "GC_MAX_PAUSE_2" = 'payload.histograms.gc_max_pause_ms_2',
-  "GC_MS" = 'payload.histograms.gc_ms',
+  # "GC_MS" = 'payload.histograms.gc_ms', #FIXME: issues regarding import 
   "GC_SLICE_DURING_IDLE" = 'payload.histograms.gc_slice_during_idle',
   "MEMORY_UNIQUE_CONTENT_STARTUP" = 'payload.processes.content.histograms.memory_unique_content_startup',
   'FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_PER_LOADED_TABS' = 'payload.histograms.fx_number_of_unique_site_origins_per_loaded_tabs_1',
