@@ -120,3 +120,5 @@ summarize.scalar <- function(d, var, R = 500, fac = 1, stat = median) {
     ex("reldiff(TvsC) %", rdci, fac = 100, nreporting.ena + nreporting.dis)
   ))
 }
+
+mean.narm <- function(x) return(mean(x, na.rm = TRUE))

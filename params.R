@@ -5,7 +5,7 @@ project_id = 'moz-fx-data-bq-data-science'
 
 tbl.main <- '`moz-fx-data-shared-prod`.analysis.fission_monitoring_main_v1'
 
-tbl.crashes <- '`moz-fx-data-shared-prod`.analysis.fission_monitoring_crashes_v1'
+tbl.crashes <- '`moz-fx-data-shared-prod`.analysis.fission_monitoring_crash_v1'
 
 tbl.analyzed <- '`moz-fx-data-shared-prod`.analysis.fission_monitoring_crashes_v1'
 
@@ -53,8 +53,23 @@ probes.scalar.max <- list(
   'MAX_TAB_COUNT' = 'payload.processes.parent.scalars.browser_engagement_max_concurrent_tab_count'
 )
 
+probes.crashes <- list(
+  'MAIN_CRASHES' = 'main_crashes',
+  'CONTENT_CRASHES' = 'content_crashes',
+  'STARTUP_CRASHES' = 'startup_crashes',
+  'CONTENT_SHUTDOWN_CRASHES' = 'content_shutdown_crashes',
+  'GPU_CRASHES' = 'gpu_crashes',
+  'PLUGIN_CRASHES' = 'plugin_crashes',
+  'GMPLUGIN_CRASHES' = 'gmplugin_crashes'
+)
+
+# Bootstrapping
+
 bs_replicates <- 500
 
 bs_replicates.2 <- 1000
 
+# Filtering
+
+perc.high <- 0.999
 

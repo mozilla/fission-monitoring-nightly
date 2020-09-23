@@ -75,7 +75,29 @@ SELECT build_id, branch,key, nreporting,1/K+psum as psum,K as K, (1/K+psum)/(nre
 FROM c
 "
 
-# Get the per-day averages of scalars
+# Get the total build crashes per client
+crashes_query_base <- "
+WITH crashes as (
+  SELECT 
+  client_id,
+  cast(substr(build_id,1,8) as int64) AS build_id,
+  experiment_branch as branch,
+  SUM(usage_hours) as USAGE_HOURS,
+{query_crashes}
+FROM {tbl}
+)
+
+SELECT
+  client_id
+  build_id
+  branch,
+  usage_hours,
+{query_crashes_probes},
+{query_crashes_per_hour}
+FROM crashes
+WHERE build_id >= {max_build_id}
+"
+
 scalar_query_base <- "
 WITH daily_agg as (
   SELECT 
@@ -96,13 +118,12 @@ SELECT
   client_id as id,
   branch,
   buildid as build_id,
-  {query_scalar}
+{query_scalar_sum_2}
+{query_scalar_max_2}
 FROM daily_agg
 WHERE buildid >= {max_build_id}
 GROUP BY 1, 2, 3
 "
-  
-
   
 #### Query Helpers ####
 build_main_query <- function(probes.hist, slug, tbl){ ##TODO: Add in scalar probes
@@ -127,6 +148,18 @@ build_hist_query <- function(probe.hist, slug, tbl, max_build_id, hist_query_bas
   )
 }
 
+build_crash_query <- function(probes.crashes, slug, tbl, max_build_id, crashes_query_base. = crashes_query_base){
+  query_crashes <- paste('  ', 'SUM(', unlist(probes.crashes), ') AS ', names(probes.crashes), sep = '', collapse = ',\n') 
+  query_crashes_per_hour <- paste('  SAFE_DIVIDE(', names(probes.crashes), ', USAGE_HOURS)', ' AS ', names(probes.crashes), '_PER_HOUR', sep='', collapse=',\n')
+  return(glue(crashes_query_base.,
+              tbl = tbl,
+              query_crashes = query_crashes,
+              query_crashes_probes = paste('  ', names(probes.crashes), collapse=',\n'),
+              query_crashes_per_hour = query_crashes_per_hour,
+              max_build_id = max_build_id
+  ))
+}
+
 build_scalar_query <- function(probes.scalar.sum, probes.scalar.max, slug, tbl, max_build_id, scalar_query_base. = scalar_query_base){
   query_scalar_sum <- dplyr::case_when(
     !is.null(probes.scalar.sum) ~ paste(paste('  ', 'SUM(COALESCE(', unlist(probes.scalar.sum), ', 0)) AS ', names(probes.scalar.sum), sep = '', collapse = ',\n'), ','),
@@ -136,11 +169,20 @@ build_scalar_query <- function(probes.scalar.sum, probes.scalar.max, slug, tbl, 
     !is.null(probes.scalar.max) ~ paste('  ', 'MAX(', unlist(probes.scalar.max), ') AS ', names(probes.scalar.max), sep = '', collapse = ',\n'),
     TRUE ~ ''
   )
-  scalars <- c(names(probes.scalar.sum), names(probes.scalar.mean))
-  query_scalar <- paste('  ', 'AVG(', scalars, ') AS ', scalars, sep = '', collapse = ',\n')
+  query_scalar_sum_2 <- dplyr::case_when(
+    !is.null(probes.scalar.sum) ~ paste(paste('  ', 'SUM(COALESCE(', names(probes.scalar.sum), ', 0)) AS ', names(probes.scalar.sum), sep = '', collapse = ',\n'), ','),
+    TRUE ~ ''
+  )
+  query_scalar_max_2 <- dplyr::case_when(
+    !is.null(probes.scalar.sum) ~ paste(paste('  ', 'MAX(', names(probes.scalar.max), ') AS ', names(probes.scalar.max), sep = '', collapse = ',\n'), ','),
+    TRUE ~ ''
+  )
+  #query_scalar <- paste('  ', 'AVG(', scalars, ') AS ', scalars, sep = '', collapse = ',\n')
   return(glue(scalar_query_base, 
               query_scalar_sum = query_scalar_sum,
               query_scalar_max = query_scalar_max,
+              query_scalar_sum_2 = query_scalar_sum_2,
+              query_scalar_max_2 = query_scalar_max_2,
               tbl = tbl,
               max_build_id = max_build_id
   )

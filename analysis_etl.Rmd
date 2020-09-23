@@ -81,19 +81,6 @@ max_build_id <- '20200908' #TODO: Define from query and as supplied arg
 ```
 
 
-
-```{r main_import}
-options(scipen = 20) # bigrquery bug: https://github.com/r-dbi/bigrquery/issues/395 
-
-# main_query <- build_main_query(probes.hist, slug, main_tbl)
-# main <- bq_project_query(project_id, main_query)
-# main.df <- bq_table_download(main)
-```
-
-```{r crashes_import}
-# place_holder
-```
-
 # Filters
 
 Query for previously processed builds. Apply this as a query filter to retrieve only new, unprocessed, builds. 
@@ -111,6 +98,8 @@ hists.raw <- list()  #TODO: For initial EDA: remove after histograms well-unders
 ```
 
 ```{r hist_agg}
+options(scipen = 20) # bigrquery bug: https://github.com/r-dbi/bigrquery/issues/395 
+
 print('Processing histograms')
 for(probe in names(probes.hist)){
     print(probe)
@@ -130,14 +119,12 @@ save(hists.raw, results.hist, file='hists_raw.2df')
 ```
 
 
-
 # Scalar Aggregation
 
 Pull the each's build per daily average of the scalars. 
-```{r scalar_agg}
+```{r scalar_import}
 scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.mean, slug, main_tbl, max_build_id))
 scalar.df <- bq_table_download(scalar) %>%
-  remove_single_builds() %>%
   as.data.table()
 ```
 ```{r scalar_agg_var}
@@ -148,15 +135,37 @@ results.scalar <- list()
 bs_replicates <- 20 #TODO: Debugging
 
 for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))){
-# for (probe in c(names(probes.scalar.max))){
   print(probe)
-  results.scalar[[probe]] <- scalar.df[get(probe)<quantile(get(probe), 0.999, na.rm = TRUE),
+  results.scalar[[probe]] <- scalar.df[get(probe)<quantile(get(probe), perc.high, na.rm = TRUE),
                                   summarize.scalar(.SD[,list(id,branch,x=get(probe))], "x", bs_replicates, stat=mean.narm),
                                   by=build_id][, probe := probe][order(build_id, what),] %>%
                               rename(branch = what)
 }
 ```
 
+# Crash Aggregation
+
+```{r crash_import}
+crashes <-  bq_project_query(project_id, build_crash_query(slug, main_tbl, max_build_id))
+crashes.df <- bq_table_download(crashes) %>%
+  as.data.table()
+```
+
+```{r crashes_agg_var}
+results.crashes <- list()
+```
+
+Process the per usage hour probes:
+```{r crashes_agg}
+for (probe in names(probes.crashes)){
+  print(probe)
+  probe_per_hour <- paste(probe, '_PER_HOUR', sep='') 
+  results.crashes[[probe_per_hour]] <- scalar.df[get(probe_per_hour)<quantile(get(probe_per_hour), perc.high, na.rm = TRUE),
+                                  summarize.scalar(.SD[,list(id,branch,x=1000*get(probe_per_hour))], "x", bs_replicates, stat=mean.narm),
+                                  by=build_id][, probe := probe_per_hour][order(build_id, what),] %>%
+                              rename(branch = what)
+}
+```
 
 # Export
 
@@ -165,6 +174,7 @@ Combine the individual probes into a single `data.frame`
 ```{r combine}
 final.df <- rbindlist(results.hist) %>%
   rbind(., rbindlist(results.scalar)) %>%
+  rbind(., rbindlist(results.crashes)) %>%
   mutate(date_computed = Sys.Date())
 
 ```
