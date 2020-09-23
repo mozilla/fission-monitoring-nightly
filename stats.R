@@ -1,3 +1,5 @@
+library(boot) 
+
 dirch <- function(v, REP){
   res <- t(replicate(REP,{
     a <- sapply(v, function(s) rgamma(1,shape=s,scale=1))
@@ -87,4 +89,34 @@ summarize.hist <- function (histo, REP = 500, sm = list(t= mean,i=function(s) s)
   }, by = list(build_id = build_id)][order(build_id, what), ]
   rbind(br,rel)[order(build_id,what),]
   
+}
+
+# summarize.scalar <- function(df, probe){
+#   scalar.df[
+#     (probe)<quantile((probe),0.999), 
+#     summarize.scalar.bts(.SD[,list(id,branch,x=(probe))], "x", bs_replicates,stat=mean),
+#     by=build_id][, label := probe][order(build_id,what),]
+#   
+# }
+
+summarize.scalar <- function(d, var, R = 500, fac = 1, stat = median) {
+  CC <- 1 / 3600
+  g1 <- boot(d, function(x, i) {
+    d <- x[i, ]
+    c1 <- d[branch == "disabled", stat(get(var))]
+    t1 <- d[branch == "enabled", stat(get(var))]
+    if (c1 <= .Machine$double.eps) H <- 0 else H <- (t1 - c1) / c1
+    c(c1, t1, H)
+  }, R = R, strata = factor(d$branch))
+  c1ci <- boot.ci(g1, type = "perc", index = 1)
+  t1ci <- boot.ci(g1, type = "perc", index = 2)
+  rdci <- boot.ci(g1, type = "perc", index = 3)
+  nreporting.dis <- length(unique(d[branch == "disabled", id]))
+  nreporting.ena <- length(unique(d[branch == "enabled", id]))
+  ex <- function(n, s, fac = 1, N) data.table(what = n, nreporting = N, low = s$perc[[4]] * fac, est = as.numeric(s$t0) * fac, high = fac * s$perc[[5]])
+  rbindlist(list(
+    ex("disabled", c1ci, fac = fac, nreporting.dis),
+    ex("enabled", t1ci, fac = fac, nreporting.ena),
+    ex("reldiff(TvsC) %", rdci, fac = 100, nreporting.ena + nreporting.dis)
+  ))
 }

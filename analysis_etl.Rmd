@@ -72,25 +72,15 @@ source('stats.R')
 
 ```{r imports}
 library(bigrquery)
-library(dlyr)
 library(data.table)
+library(dplyr)
 ```
 
-```{r helpers}
-##FIXME: Move these that persist after pipeline is finalized 
-
-# Single clients from older builds in Nightly dev table
-remove_single_builds <- function(df) {
-  bunk_builds <- df %>% 
-    group_by(build_id) %>% 
-    summarize(nbranches = length(unique(branch)), .groups = 'drop') %>% 
-    filter(nbranches < 2)
-  return(
-    df %>% 
-      filter(!build_id %in% bunk_builds$build_id)
-  )
-}
+```{r args}
+max_build_id <- '20200908' #TODO: Define from query and as supplied arg
 ```
+
+
 
 ```{r main_import}
 options(scipen = 20) # bigrquery bug: https://github.com/r-dbi/bigrquery/issues/395 
@@ -110,39 +100,62 @@ Query for previously processed builds. Apply this as a query filter to retrieve 
 
 # Histogram Aggregation
 
+Perform the histogram aggregation server-side. This is most easy achieved processing a histogram at a time. 
+
 **TODO** There are several methods necessary for handling histograms. This will require a map of probe_name -> hist_agg_method. Defaulting to `summarize.hist` for the moment. 
 
 
 ```{r hist_agg_var}
 results.hist <- list()
-hists.raw <- list()  #TODO: For initial EDA: remove after histograms well-understood\
+hists.raw <- list()  #TODO: For initial EDA: remove after histograms well-understood
 ```
 
 ```{r hist_agg}
 print('Processing histograms')
 for(probe in names(probes.hist)){
-  if (!probe %in% names(results.hist)){
-    if(probe == 'GC_MS') next
-      print(probe)
-    hist_query <- build_hist_query(probes.hist[[probe]], slug, main_tbl)
+    print(probe)
+    hist_query <- build_hist_query(probes.hist[[probe]], slug, main_tbl, max_build_id)
     hist <- bq_project_query(project_id, hist_query)
     hist.df <- bq_table_download(hist) %>%
-      remove_single_builds() %>%  #FIXME: Hack for dev table support
       as.data.table()
     
     results.hist[[probe]] <- summarize.hist(hist.df) %>% 
       mutate(probe = probe) %>%
-      mutate(probe = probe) %>%
       rename(branch = what)
     
     hists.raw[[probe]] <- hist.df
-  }
 }
 
 save(hists.raw, results.hist, file='hists_raw.2df')
 ```
 
+
+
 # Scalar Aggregation
+
+Pull the each's build per daily average of the scalars. 
+```{r scalar_agg}
+scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.mean, slug, main_tbl, max_build_id))
+scalar.df <- bq_table_download(scalar) %>%
+  remove_single_builds() %>%
+  as.data.table()
+```
+```{r scalar_agg_var}
+results.scalar <- list()
+```
+
+```{r scalar_agg, warning=FALSE}
+bs_replicates <- 20 #TODO: Debugging
+
+for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))){
+# for (probe in c(names(probes.scalar.max))){
+  print(probe)
+  results.scalar[[probe]] <- scalar.df[get(probe)<quantile(get(probe), 0.999, na.rm = TRUE),
+                                  summarize.scalar(.SD[,list(id,branch,x=get(probe))], "x", bs_replicates, stat=mean.narm),
+                                  by=build_id][, probe := probe][order(build_id, what),] %>%
+                              rename(branch = what)
+}
+```
 
 
 # Export
@@ -150,10 +163,10 @@ save(hists.raw, results.hist, file='hists_raw.2df')
 Combine the individual probes into a single `data.frame`
 
 ```{r combine}
-results.hist.df <- rbindlist(results.hist) %>%
+final.df <- rbindlist(results.hist) %>%
+  rbind(., rbindlist(results.scalar)) %>%
   mutate(date_computed = Sys.Date())
 
-final.df <- results.hist.df
 ```
 
 Export finalized dataset to BigQuery for display in dashboard
@@ -187,12 +200,18 @@ bq_table(project = project_id,
 * Query for previous max_build_id and limit initial import to those unprocessed. 
 * Limit build ID window to 10 days to reduce processing. 
 * Delete from the analysis table anything that has a buildID that is within `final.df`
+* For scalar query, perform dense_rank on client_id to get `id` field
+* Scalar boostrapping should all be done with same replicates. Statistically more sound, and MUCH faster. 
 
-* Add total number of unique users per branch per build
+* Missing Analysis Fields
+  - Add total number of unique users per branch per build
+  - 
 * should "MEMORY_TOTAL" = 'payload.processes.histograms.memory_total' and not content?
+* Purpose of: sum(coalesce(VALUE_SUM(checkerboard_severity,500))) 
+* Handling `device_resets`?
+
 
 # FIXME
-* GC_MS is an issue in data pull
 * Exported table should be in `moz-fx-data-shared-prod`. Issues regarding `bigrquery` and credentials. 
 
 * `FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_PER_LOADED_TABS` is a composition of many histograms. Only using `payload.histograms.fx_number_of_unique_site_origins_per_loaded_tabs_1` for POC. 

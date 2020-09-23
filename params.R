@@ -26,7 +26,7 @@ probes.hist <- list(
   "MEMORY_TOTAL" = 'payload.histograms.memory_total',
   "CYCLE_COLLECTOR_MAX_PAUSE" = 'payload.histograms.cycle_collector_max_pause',
   "GC_MAX_PAUSE_2" = 'payload.histograms.gc_max_pause_ms_2',
-  # "GC_MS" = 'payload.histograms.gc_ms', #FIXME: issues regarding import 
+  "GC_MS" = 'payload.processes.content.histograms.gc_ms', 
   "GC_SLICE_DURING_IDLE" = 'payload.histograms.gc_slice_during_idle',
   "MEMORY_UNIQUE_CONTENT_STARTUP" = 'payload.processes.content.histograms.memory_unique_content_startup',
   'FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_PER_LOADED_TABS' = 'payload.histograms.fx_number_of_unique_site_origins_per_loaded_tabs_1',
@@ -37,12 +37,20 @@ probes.hist <- list(
   "LOADED_TAB_COUNT" = 'payload.histograms.loaded_tab_count'
 )
 
-probes.scalar <- list(
+probes.scalar.sum <- list(
+  'ACTIVE_TICKS' = 'payload.processes.parent.scalars.browser_engagement_active_ticks',
+  'SUBSESSION_LENGTH' = 'payload.info.subsession_length',
+  'URI_COUNT' = 'payload.processes.parent.scalars.browser_engagement_total_uri_count'
+)
+
+# probes.scalar.mean <- list(
+# 
+# )
+
+probes.scalar.max <- list(
   "GFX_OMTP_PAINT_WAIT_TIME_RATIO" = 'payload.processes.content.scalars.gfx_omtp_paint_wait_ratio',
-  'URI_COUNT' = 'payload.processes.parent.scalars.browser_engagement_total_uri_count',
   'TAB_OPEN_EVENT_COUNT' = 'payload.processes.parent.scalars.browser_engagement_tab_open_event_count',
-  'MAX_TAB_COUNT' = 'payload.processes.parent.scalars.browser_engagement_max_concurrent_tab_count',
-  ''
+  'MAX_TAB_COUNT' = 'payload.processes.parent.scalars.browser_engagement_max_concurrent_tab_count'
 )
 
 bs_replicates <- 500
