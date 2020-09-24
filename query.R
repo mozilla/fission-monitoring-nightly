@@ -85,11 +85,12 @@ WITH crashes as (
   SUM(usage_hours) as USAGE_HOURS,
 {query_crashes}
 FROM {tbl}
+GROUP BY 1, 2, 3
 )
 
 SELECT
-  client_id
-  build_id
+  client_id as id,
+  build_id,
   branch,
   usage_hours,
 {query_crashes_probes},
@@ -124,7 +125,19 @@ FROM daily_agg
 WHERE buildid >= {max_build_id}
 GROUP BY 1, 2, 3
 "
-  
+
+build_id_query_base <- "
+SELECT DATE_SUB(DATE(MAX(submission_timestamp)), INTERVAL {num_build_dates} DAY) as max_build_date
+FROM {tbl} 
+WHERE
+  `moz-fx-data-shared-prod`.udf.get_key(environment.experiments,'{slug}').branch IS NOT NULL
+"
+
+delete_build_records_query_base <- "
+DELETE 
+FROM {tbl} 
+WHERE build_id >='{max_build_id}'
+"  
 #### Query Helpers ####
 build_main_query <- function(probes.hist, slug, tbl){ ##TODO: Add in scalar probes
   query_hist = dplyr::case_when(
@@ -187,6 +200,19 @@ build_scalar_query <- function(probes.scalar.sum, probes.scalar.max, slug, tbl, 
               max_build_id = max_build_id
   )
   )
+}
+
+build_max_build_id_query <- function(tbl, num_build_dates){
+  return(
+    glue(build_id_query_base, tbl=main_tbl, num_build_dates = num_build_dates)
+    )
+}
+
+build_delete_build_records_query <- function(tbl, max_build_id){
+  return(glue(delete_build_records_query_base,
+              tbl = tbl,
+              max_build_id = max_build_id)
+         )
 }
 
 generate_shell_export_tblname <- function(s) {

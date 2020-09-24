@@ -1,15 +1,11 @@
 
 [
   {
-    "name": "date_computed",
-    "type": "DATE"
-  },
-  {
-    "name": "buildid",
+    "name": "build_id",
     "type": "STRING"
   },
   {
-    "name": "what",
+    "name": "branch",
     "type": "STRING"
   },
   {
@@ -29,9 +25,11 @@
     "type": "FLOAT64"
   },
   {
-    "name": "label",
+    "name": "probe",
     "type": "STRING"
+  },
+    {
+    "name": "date_computed",
+    "type": "DATE"
   }
-  
-  
 ]

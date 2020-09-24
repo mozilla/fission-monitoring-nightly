@@ -76,14 +76,38 @@ library(data.table)
 library(dplyr)
 ```
 
+
 ```{r args}
-max_build_id <- '20200908' #TODO: Define from query and as supplied arg
+args <- params$args
+is.debug <- TRUE # if(!is.null(args$debug)) args$debug else FALSE
 ```
 
+```{r bug_fixes}
+options(scipen = 20) # bigrquery bug: https://github.com/r-dbi/bigrquery/issues/395 
+```
+
+```{r big_query}
+if (is_debug){
+  bq_auth('/Users/chygelund/.config/gcloud/application_default_credentials.json')
+}else{
+  bq_auth(args$creds_path)
+}
+```
 
 # Filters
 
 Query for previously processed builds. Apply this as a query filter to retrieve only new, unprocessed, builds. 
+
+```{r filters}
+if (is.debug){
+  max_build_id <- max_build_id <- '20200908' #TODO: Define from query and as supplied arg
+}else{
+  max_build_id <- bq_project_query(project_id, build_max_build_id_query(main_tbl, num_build_dates)) %>%
+    bq_table_download() %>%
+    pull(max_build_date) %>% 
+    format('%Y%m%d')
+}
+```
 
 # Histogram Aggregation
 
@@ -98,8 +122,6 @@ hists.raw <- list()  #TODO: For initial EDA: remove after histograms well-unders
 ```
 
 ```{r hist_agg}
-options(scipen = 20) # bigrquery bug: https://github.com/r-dbi/bigrquery/issues/395 
-
 print('Processing histograms')
 for(probe in names(probes.hist)){
     print(probe)
@@ -146,9 +168,19 @@ for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))){
 # Crash Aggregation
 
 ```{r crash_import}
-crashes <-  bq_project_query(project_id, build_crash_query(slug, main_tbl, max_build_id))
+crashes <-  bq_project_query(project_id, build_crash_query(probes.crashes, slug, tbl.crashes, max_build_id))
 crashes.df <- bq_table_download(crashes) %>%
   as.data.table()
+```
+
+```{r}
+# FIXME: 
+crashes.df <- crashes.df %>%
+  filter(build_id != '20200923') %>%
+  mutate(branch = case_when(
+    branch == 'false' ~ 'disabled',
+    TRUE ~ 'enabled'
+  ))
 ```
 
 ```{r crashes_agg_var}
@@ -156,12 +188,14 @@ results.crashes <- list()
 ```
 
 Process the per usage hour probes:
-```{r crashes_agg}
+```{r crashes_agg, warning=FALSE}
 for (probe in names(probes.crashes)){
   print(probe)
+  if (probe == 'STARTUP_CRASHES') next #FIXME: Error in boot(d, function(x, i) { : no data in call to 'boot'
   probe_per_hour <- paste(probe, '_PER_HOUR', sep='') 
-  results.crashes[[probe_per_hour]] <- scalar.df[get(probe_per_hour)<quantile(get(probe_per_hour), perc.high, na.rm = TRUE),
-                                  summarize.scalar(.SD[,list(id,branch,x=1000*get(probe_per_hour))], "x", bs_replicates, stat=mean.narm),
+  # probe_per_hour <- probe
+  results.crashes[[probe_per_hour]] <- crashes.df[get(probe_per_hour)<quantile(get(probe_per_hour), perc.high, na.rm = TRUE),
+                                  summarize.scalar(.SD[,list(id,branch,x=get(probe_per_hour))], "x", bs_replicates, stat=mean.narm),
                                   by=build_id][, probe := probe_per_hour][order(build_id, what),] %>%
                               rename(branch = what)
 }
@@ -176,6 +210,21 @@ final.df <- rbindlist(results.hist) %>%
   rbind(., rbindlist(results.scalar)) %>%
   rbind(., rbindlist(results.crashes)) %>%
   mutate(date_computed = Sys.Date())
+```
+
+Remove records corresponding to the newest builds
+
+```{r}
+bq_project_query(project_id, build_delete_build_records_query(tbl.analyzed, max_build_id ))
+
+# bq_auth('/Users/chygelund/.config/gcloud/application_default_credentials.json')
+# con <- dbConnect(
+#         bigrquery::bigquery(),
+#         project = project_id,
+#         dataset = 'cdowhygleund'
+#     )
+# dbGetQuery(con, build_delete_build_records_query(tbl.analyzed, max_build_id ), n=200)
+
 
 ```
 
@@ -183,35 +232,42 @@ Export finalized dataset to BigQuery for display in dashboard
 **FIXME**: Temporarily using `moz-fx-data-bq-data-science.cdowhygelund.fission_monitoring_analyzed_v1` until credential issue is solved.
 
 ```{r export}
-# bigrquery method: not sure how to configure credentials to write to `moz-fx-data-shared-prod`
-bq_table(project = project_id,
-         # dataset = "analysis",
-         dataset = 'cdowhygelund',
-         table   = "fission_monitoring_analyzed_v1") %>%
-  bq_table_upload(values = final.df,
-                  create_disposition = "CREATE_IF_NEEDED",
-                  write_disposition = "WRITE_APPEND",
-                  fields = as_bq_fields(final.df) )
+# 
+# # FIXME: might need the following (needs to be tested)
+# token <- gargle::credentials_app_default("https://www.googleapis.com/auth/bigquery")
+# token$params$as_header <- TRUE
+# set_access_cred(token)
+# 
+# bq_table(#project = 'moz-fx-data-shared-prod',
+#   project = project_id,
+#          #dataset = "analysis",
+#          dataset = 'cdowhygelund',
+#          table   = "fission_monitoring_analyzed_v1") %>%
+#   bq_table_upload(values = final.df,
+#                   create_disposition = "CREATE_IF_NEEDED",
+#                   #write_disposition = "WRITE_APPEND",
+#                   write_disposition = "WRITE_TRUNCATE",
+#                   fields = as_bq_fields(final.df) )
 
 
 # sguha method using command line: might be necessary to circumvent credentials issue
 
-# atemp <- tempfile()
-# fwrite(final.df, file=atemp,row.names=FALSE,quote=TRUE,na=0)
-# l <- glue("bq load --noreplace   --project_id='moz-fx-data-shared-prod'  --source_format=CSV --skip_leading_rows=1 --null_marker=NA",
-#           " \"{generate_shell_export_tblname(tbl.analyzed)}\" {atemp} ./tbl_analyzed_fields.json")
-# #loginfo(l)
-# system(l)
+atemp <- tempfile()
+fwrite(final.df, file=atemp,row.names=FALSE,quote=TRUE,na=0)
+l <- glue("bq load --noreplace   --project_id='moz-fx-data-bq-data-science'  --source_format=CSV --skip_leading_rows=1 --null_marker=NA",
+          " \"{generate_shell_export_tblname(tbl.analyzed)}\" {atemp} ./tbl_analyzed_fields.json")
+#loginfo(l)
+system(l)
 ```
 
 
 # TODO
 
-* Query for previous max_build_id and limit initial import to those unprocessed. 
-* Limit build ID window to 10 days to reduce processing. 
 * Delete from the analysis table anything that has a buildID that is within `final.df`
 * For scalar query, perform dense_rank on client_id to get `id` field
+* Deal with scaling on crashes_per_usage_hour: add a fudge factor? (e.g. crashes per 1000 hours)
 * Scalar boostrapping should all be done with same replicates. Statistically more sound, and MUCH faster. 
+* dynamically name control/treatment in stats.R
 
 * Missing Analysis Fields
   - Add total number of unique users per branch per build
