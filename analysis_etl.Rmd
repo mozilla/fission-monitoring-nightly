@@ -217,7 +217,7 @@ final.df <- rbindlist(results.hist) %>%
 
 Remove records corresponding to the newest builds
 
-```{r}
+```{r delete_processed_builds}
 # bq_project_query(project_id, build_delete_build_records_query(tbl.analyzed, max_build_id ))
 
 # bq_auth('/Users/chygelund/.config/gcloud/application_default_credentials.json')
