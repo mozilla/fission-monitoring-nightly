@@ -134,10 +134,11 @@ for(probe in names(probes.hist)){
       mutate(probe = probe) %>%
       rename(branch = what)
     
-    hists.raw[[probe]] <- hist.df
+    # hists.raw[[probe]] <- hist.df
+    break  
 }
 
-save(hists.raw, results.hist, file='hists_raw.2df')
+# save(hists.raw, results.hist, file='hists_raw.2df')
 ```
 
 
@@ -162,6 +163,7 @@ for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))){
                                   summarize.scalar(.SD[,list(id,branch,x=get(probe))], "x", bs_replicates, stat=mean.narm),
                                   by=build_id][, probe := probe][order(build_id, what),] %>%
                               rename(branch = what)
+  break
 }
 ```
 
@@ -198,6 +200,7 @@ for (probe in names(probes.crashes)){
                                   summarize.scalar(.SD[,list(id,branch,x=get(probe_per_hour))], "x", bs_replicates, stat=mean.narm),
                                   by=build_id][, probe := probe_per_hour][order(build_id, what),] %>%
                               rename(branch = what)
+  break
 }
 ```
 
