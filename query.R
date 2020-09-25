@@ -204,7 +204,7 @@ build_scalar_query <- function(probes.scalar.sum, probes.scalar.max, slug, tbl, 
 
 build_max_build_id_query <- function(tbl, num_build_dates){
   return(
-    glue(build_id_query_base, tbl=main_tbl, num_build_dates = num_build_dates)
+    glue(build_id_query_base, tbl=tbl, num_build_dates = num_build_dates)
     )
 }
 
