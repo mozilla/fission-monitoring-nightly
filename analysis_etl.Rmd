@@ -146,43 +146,43 @@ for(probe in names(probes.hist)){
 
 Pull the each's build per daily average of the scalars. 
 ```{r scalar_import}
-scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.mean, slug, tbl.main, max_build_id))
-scalar.df <- bq_table_download(scalar) %>%
-  as.data.table()
+# scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.mean, slug, tbl.main, max_build_id))
+# scalar.df <- bq_table_download(scalar) %>%
+#   as.data.table()
 ```
 ```{r scalar_agg_var}
 results.scalar <- list()
 ```
 
 ```{r scalar_agg, warning=FALSE}
-bs_replicates <- 20 #TODO: Debugging
-
-for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))){
-  print(probe)
-  results.scalar[[probe]] <- scalar.df[get(probe)<quantile(get(probe), perc.high, na.rm = TRUE),
-                                  summarize.scalar(.SD[,list(id,branch,x=get(probe))], "x", bs_replicates, stat=mean.narm),
-                                  by=build_id][, probe := probe][order(build_id, what),] %>%
-                              rename(branch = what)
-  break
-}
+# bs_replicates <- 20 #TODO: Debugging
+# 
+# for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))){
+#   print(probe)
+#   results.scalar[[probe]] <- scalar.df[get(probe)<quantile(get(probe), perc.high, na.rm = TRUE),
+#                                   summarize.scalar(.SD[,list(id,branch,x=get(probe))], "x", bs_replicates, stat=mean.narm),
+#                                   by=build_id][, probe := probe][order(build_id, what),] %>%
+#                               rename(branch = what)
+#   break
+# }
 ```
 
 # Crash Aggregation
 
 ```{r crash_import}
-crashes <-  bq_project_query(project_id, build_crash_query(probes.crashes, slug, tbl.crashes, max_build_id))
-crashes.df <- bq_table_download(crashes) %>%
-  as.data.table()
+# crashes <-  bq_project_query(project_id, build_crash_query(probes.crashes, slug, tbl.crashes, max_build_id))
+# crashes.df <- bq_table_download(crashes) %>%
+#   as.data.table()
 ```
 
 ```{r}
 # FIXME: 
-crashes.df <- crashes.df %>%
-  filter(build_id != '20200923') %>%
-  mutate(branch = case_when(
-    branch == 'false' ~ 'disabled',
-    TRUE ~ 'enabled'
-  ))
+# crashes.df <- crashes.df %>%
+#   filter(build_id != '20200923') %>%
+#   mutate(branch = case_when(
+#     branch == 'false' ~ 'disabled',
+#     TRUE ~ 'enabled'
+#   ))
 ```
 
 ```{r crashes_agg_var}
@@ -191,17 +191,17 @@ results.crashes <- list()
 
 Process the per usage hour probes:
 ```{r crashes_agg, warning=FALSE}
-for (probe in names(probes.crashes)){
-  print(probe)
-  if (probe == 'STARTUP_CRASHES') next #FIXME: Error in boot(d, function(x, i) { : no data in call to 'boot'
-  probe_per_hour <- paste(probe, '_PER_HOUR', sep='') 
-  # probe_per_hour <- probe
-  results.crashes[[probe_per_hour]] <- crashes.df[get(probe_per_hour)<quantile(get(probe_per_hour), perc.high, na.rm = TRUE),
-                                  summarize.scalar(.SD[,list(id,branch,x=get(probe_per_hour))], "x", bs_replicates, stat=mean.narm),
-                                  by=build_id][, probe := probe_per_hour][order(build_id, what),] %>%
-                              rename(branch = what)
-  break
-}
+# for (probe in names(probes.crashes)){
+#   print(probe)
+#   if (probe == 'STARTUP_CRASHES') next #FIXME: Error in boot(d, function(x, i) { : no data in call to 'boot'
+#   probe_per_hour <- paste(probe, '_PER_HOUR', sep='') 
+#   # probe_per_hour <- probe
+#   results.crashes[[probe_per_hour]] <- crashes.df[get(probe_per_hour)<quantile(get(probe_per_hour), perc.high, na.rm = TRUE),
+#                                   summarize.scalar(.SD[,list(id,branch,x=get(probe_per_hour))], "x", bs_replicates, stat=mean.narm),
+#                                   by=build_id][, probe := probe_per_hour][order(build_id, what),] %>%
+#                               rename(branch = what)
+#   break
+# }
 ```
 
 # Export
@@ -210,8 +210,8 @@ Combine the individual probes into a single `data.frame`
 
 ```{r combine}
 final.df <- rbindlist(results.hist) %>%
-  rbind(., rbindlist(results.scalar)) %>%
-  rbind(., rbindlist(results.crashes)) %>%
+  # rbind(., rbindlist(results.scalar)) %>%
+  # rbind(., rbindlist(results.crashes)) %>%
   mutate(date_computed = Sys.Date())
 ```
 
