@@ -13,5 +13,12 @@ docker build -t fission_monitoring_nightly .
 
 ### Running
 ```shell script
-docker run -it -v PATH_TO_CREDENTIALS.json:/app/.credentials -e GOOGLE_APPLICATION_CREDENTIALS=/app/.credentials fission_monitoring_nightly
+docker run -it -v PATH_TO_CREDENTIALS.json:/app/.credentials -e GOOGLE_APPLICATION_CREDENTIALS=/app/.credentials -e BQ_BILLING_PROJECT_ID=moz-fx-data-shared-prod fission_monitoring_nightly
 ```
+
+
+## TOTO - parameters
+* BQ_BILLING_PROJECT_ID
+* BQ_INPUT_MAIN_TABLE
+* BQ_INPUT_CRASH_TABLE
+* BQ_OUTPUT_TABLE
