@@ -1,0 +1,30 @@
+orbs:
+  gcp-gcr: circleci/gcp-gcr@0.7.1
+
+version: 2.1
+
+jobs:
+  build:
+    docker:
+      - image: mozilla/cidockerbases:docker-latest
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Build image
+          command: docker build -t fission_monitoring:0.1 .
+
+workflows:
+  version: 2
+  public-data-report-etl-build:
+    jobs:
+      - build:
+          filters:
+            tags:
+              only: /.*/
+      - gcp-gcr/build-and-push-image:
+          context: data-eng-airflow-gcr
+          image: fission-monitoring
+          filters:
+            branches:
+              only: master
