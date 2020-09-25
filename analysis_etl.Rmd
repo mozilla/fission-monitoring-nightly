@@ -241,26 +241,26 @@ Export finalized dataset to BigQuery for display in dashboard
 # token$params$as_header <- TRUE
 # set_access_cred(token)
 # 
-# bq_table(#project = 'moz-fx-data-shared-prod',
-#   project = project_id,
-#          #dataset = "analysis",
-#          dataset = 'cdowhygelund',
-#          table   = "fission_monitoring_analyzed_v1") %>%
-#   bq_table_upload(values = final.df,
-#                   create_disposition = "CREATE_IF_NEEDED",
-#                   #write_disposition = "WRITE_APPEND",
-#                   write_disposition = "WRITE_TRUNCATE",
-#                   fields = as_bq_fields(final.df) )
+ bq_table(project = 'moz-fx-data-shared-prod',
+   #project = project_id,
+          dataset = "analysis",
+          #dataset = 'cdowhygelund',
+          table   = "fission_monitoring_analyzed_v1") %>%
+   bq_table_upload(values = final.df,
+                   create_disposition = "CREATE_IF_NEEDED",
+                   #write_disposition = "WRITE_APPEND",
+                   write_disposition = "WRITE_TRUNCATE",
+                   fields = as_bq_fields(final.df) )
 
 
 # sguha method using command line: might be necessary to circumvent credentials issue
 
-atemp <- tempfile()
-fwrite(final.df, file=atemp,row.names=FALSE,quote=TRUE,na=0)
-l <- glue("bq load --noreplace   --project_id='moz-fx-data-bq-data-science'  --source_format=CSV --skip_leading_rows=1 --null_marker=NA",
-          " \"{generate_shell_export_tblname(tbl.analyzed)}\" {atemp} ./tbl_analyzed_fields.json")
+#atemp <- tempfile()
+#fwrite(final.df, file=atemp,row.names=FALSE,quote=TRUE,na=0)
+#l <- glue("bq load --noreplace   --project_id='moz-fx-data-bq-data-science'  --source_format=CSV --skip_leading_rows=1 --null_marker=NA",
+#          " \"{generate_shell_export_tblname(tbl.analyzed)}\" {atemp} ./tbl_analyzed_fields.json")
 #loginfo(l)
-system(l)
+#system(l)
 ```
 
 
