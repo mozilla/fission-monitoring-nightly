@@ -146,7 +146,7 @@ for(probe in names(probes.hist)){
 
 Pull the each's build per daily average of the scalars. 
 ```{r scalar_import}
-# scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.mean, slug, tbl.main, max_build_id))
+# scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, slug, tbl.main, max_build_id))
 # scalar.df <- bq_table_download(scalar) %>%
 #   as.data.table()
 ```
@@ -218,7 +218,7 @@ final.df <- rbindlist(results.hist) %>%
 Remove records corresponding to the newest builds
 
 ```{r}
-bq_project_query(project_id, build_delete_build_records_query(tbl.analyzed, max_build_id ))
+# bq_project_query(project_id, build_delete_build_records_query(tbl.analyzed, max_build_id ))
 
 # bq_auth('/Users/chygelund/.config/gcloud/application_default_credentials.json')
 # con <- dbConnect(
