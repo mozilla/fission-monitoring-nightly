@@ -27,4 +27,4 @@ workflows:
           image: fission-monitoring
           filters:
             branches:
-              only: master
+              only: main
