@@ -1,5 +1,5 @@
 #### BigQuery-specific ####
-project_id <- 'moz-fx-data-bq-data-science'
+#project_id <- 'moz-fx-data-bq-data-science'
 fission_tables <- list(
   project = 'moz-fx-data-shared-prod',
   dataset = 'analysis',

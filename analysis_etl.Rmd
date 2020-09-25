@@ -99,6 +99,8 @@ options(scipen = 20) # bigrquery bug: https://github.com/r-dbi/bigrquery/issues/
 Query for previously processed builds. Apply this as a query filter to retrieve only new, unprocessed, builds. 
 
 ```{r filters}
+project_id <- Sys.getenv("BQ_BILLING_PROJECT_ID")
+
 if (is.debug){
   max_build_id <- max_build_id <- '20200908' #TODO: Define from query and as supplied arg
 }else{
