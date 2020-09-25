@@ -16,7 +16,7 @@ jobs:
 
 workflows:
   version: 2
-  public-data-report-etl-build:
+  fission-monitoring-nightly-build:
     jobs:
       - build:
           filters:
