@@ -1,0 +1,274 @@
+---
+title: "Fission Nightly Monitoring"
+author: "Managed by Data Science,`r sprintf(' rendered at %s PST',Sys.time())`"
+output:
+  html_document:
+    toc: false
+    toc_depth: 5
+---
+
+
+
+<style>
+@import url("https://fonts.googleapis.com/css?family=Nunito|Quattrocento+Sans|Roboto+Mono:300&display=swap");
+body {
+    line-height: 1.4em;
+    font-family: 'Quattrocento Sans', sans-serif;
+    background-color: transparent;
+    }
+    
+
+.r {
+    background-color: white;
+    border: 0;
+        }
+        
+h4 { 
+    background-color: #EEF1E6; 
+}
+
+.author {
+    background-color: transparent;
+}
+
+pre code, pre, code {
+  white-space: pre !important;
+  overflow-x: scroll !important;
+  word-break: keep-all !important;
+  word-wrap: initial !important;
+}
+
+h1,h2,h3,h4,h5,h6 {
+    font-family: 'Nunito', sans-serif;
+}
+
+table {
+font-family: 'Roboto Mono', monospace;
+font-size: 85%;
+}
+
+pre,code {
+    border:0;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 80%;
+}
+
+ul.navtabs !{
+    border:0;
+}
+
+p.caption {
+    font-weight: bold;
+}
+
+p.caption ol,li {
+    font-weight: bold;
+}
+
+
+.figure {
+    text-align: center;
+    width: 80vw;
+    position: relative;
+    margin-left: calc((100% - 80vw)/2);
+}
+
+
+</style>
+
+
+```{r echo=FALSE,warning=FALSE, results='hide',message=FALSE,message=FALSE}
+source("query.R")
+source("plot.R")
+source('dashboard_params.R')
+source('params.R')
+```
+
+```{r echo=FALSE,warning=FALSE, results='hide',message=FALSE,message=FALSE}
+library(glue)
+library(bigrquery)
+library(dplyr)
+library(data.table)
+library(parsedate)
+```
+
+```{r echo=FALSE,warning=FALSE, results='hide',message=FALSE,message=FALSE}
+library(knitr)
+knitr::opts_chunk$set(  cache=FALSE,echo=FALSE,warning=FALSE,message=FALSE,eval=FALSE,fig.width=13,fig.height=4)
+```
+
+```{r eval=TRUE}
+W <- 1000; H <- 200;
+```
+
+
+**Description**: This is dashboard monitoring the development of Fission, by utilizing Normandy selected cohorts (e.g., Fission-enabled vs. Fission-disabled). For further details see the [experimenter ticket](https://experimenter.services.mozilla.com/experiments/fission-nightly/). 
+
+The dashboard is arranged in 3 tabs corresponding to performance, stability and
+usage.Two lines one for each branch and each point corresponds to a specific build.
+
+* Blue line: enabled branch
+* Red line: disabled branch 
+
+Hovering over each point reveals a pop-up displaying the build_id, value, error bar, and relative difference.
+*NOTE*: If a check-mark follows the latter, evidence suggests that branches are different (e.g., regression occurred).
+
+Zoom: Use mouse-wheel, and double-click to reset.
+
+```{r eval=TRUE}
+max_build_id <- bq_project_query(project_id, 
+                                 glue("SELECT max(build_id) as max_build_id from {tbl.analyzed}")) %>%
+  bq_table_download() %>% 
+  pull(max_build_id)
+```
+
+Information for builds till `r as.Date(as.character(max_build_id), format = '%Y%m%d')`.
+
+
+##  {.tabset}
+
+### Performance
+
+```{r eval=TRUE}
+# query histogram datasets
+hists <- list()
+for (probe in names(probes.hist)){
+  # probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
+  hists[[probe]] <- bq_project_query(project_id, build_analyzed_probe_query(tbl.analyzed, probe = probe)) %>%
+    bq_table_download() %>%
+    as.data.table()
+}
+
+performance_plots <- list()
+
+for (probe in names(hists)){
+  df <- hists[[probe]]
+  if (nrow(df) > 0) {
+    # print(probe)
+    performance_plots[[length(performance_plots) + 1]] <- create.figure(df, title=probe,
+                    yaxislab='Estimate',width=W/1.85,height=H,
+                    LA=90)
+  }
+}
+
+vw(list(
+    config = list( legend = list(direction='horizontal',orient='top',title=NULL)),
+    vconcat=performance_plots
+        ) ,TRUE)
+```
+
+
+### Stability
+
+#### Crash Rates: Detail (OOM,GPU,Content, Main)
+
+```{r eval=TRUE,fig.cap='Fig11. (a) Content, (b) Main, (c) GPU, and (d) OOM Crash Rates(/Profile/1000 Hrs)'}
+# query analyzed per hour data
+# crashes <- list()
+# for (probe in names(probes.crashes)){
+#   probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
+#   crashes[[probe_per_hour]] <- bq_project_query(project_id, build_analyzed_probe_query(tbl.analyzed, probe = probe_per_hour)) %>%
+#     bq_table_download() %>%
+#     as.data.table()
+# }
+# 
+# ccr <- create.figure(crashes[['CONTENT_CRASHES_PER_HOUR']], title="(a) Content Crash Rate/Profile/1000 Hrs",
+#                     yaxislab='Estimate',width=W/1.85,height=H,
+#                     LA=90)
+# cmr <- create.figure(crashes[['MAIN_CRASHES_PER_HOUR']], title="(b) Main Crash Rate/Profile/1000 Hrs",
+#                     yaxislab='Estimate',width=W/1.85,height=H,
+#                     LA=90)
+# cgr <- create.figure(crashes[['GPU_CRASHES_PER_HOUR']], title="(c) GPU Crash Rate/Profile/1000 Hrs",
+#                     yaxislab='Estimate',width=W/1.85,height=H,
+#                     LA=90)
+# cor <- create.figure(crashes[['GPU_CRASHES_PER_HOUR']],title="(d) OOM Crash Rate/Profile/1000 Hrs",
+#                     yaxislab='Estimate',width=W/1.85,height=H,
+#                     LA=90)
+# vw(list(
+#     config = list( legend = list(direction='horizontal',orient='top',title=NULL)),
+#     vconcat=list(
+#             list(hconcat = list( ccr,cmr)),
+#             list(hconcat = list( cgr,cor))
+#         )
+#         ) ,TRUE)
+```
+
+
+```{r eval=TRUE}
+# query analyzed per hour data
+crashes <- list()
+for (probe in names(probes.crashes)){
+  probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
+  crashes[[probe_per_hour]] <- bq_project_query(project_id, build_analyzed_probe_query(tbl.analyzed, probe = probe_per_hour)) %>%
+    bq_table_download() %>%
+    as.data.table()
+}
+
+crash_plots <- list()
+
+for (probe in names(crashes)){
+  df <- crashes[[probe]]
+  if (nrow(df) > 0) {
+    # print(probe)
+    crash_plots[[length(crash_plots) + 1]] <- create.figure(df, title=probe,
+                    yaxislab='Estimate',width=W/1.85,height=H,
+                    LA=90)
+  }
+}
+
+vw(list(
+    config = list( legend = list(direction='horizontal',orient='top',title=NULL)),
+    vconcat=crash_plots
+        ) ,TRUE)
+```
+
+### About
+
+The sample size is not enough to detect small changes but choosing more would
+use up all the appropriate population. This experiment will continue to enroll for
+about a year.
+
+
+#### ETL
+
+A 2-stage ETL step runs everyday. The initial stage generates two tables:
+
+1. Filters `moz-fx-data-shared-prod.telemetry.main` to only those enrolled in the experiment
+   - Output Table: `r tbl.main` 
+2. Filters `moz-fx-data-shared-prod.telemetry.crashes` to only those enrolled in the experiment. Performs subsequent aggregations at the client and build level 
+for specific crash types`.
+   - Output Table: `r tbl.crashes`
+   
+The [second stage analyzes](https://github.com/mozilla/fission-monitoring-nightly/blob/main/analysis_etl.Rmd) these tables for specific probes defined [here](https://github.com/mozilla/fission-monitoring-nightly/blob/main/params.R#L24).
+It filters these 1st stage ETL tables to only process the last `r num_build_dates` of Nightly builds. In addition, it calculates means, relative difference of means, 
+and confidence intervals using bootstraping (`r bs_replicates` samples). All metrics are per client and each client has the same weight. For histogram aggregation, 
+the method employed is that same as used in GLAM:  
+
+1. Aggregate clients responses for a given histogram to one response (e.g.: add all values for same bucket
+for that client). 
+2. Normalize the per client histograms to a density (e.g., magnitude equal 1). 
+3. Averaged densities across clients. See appendix for the assumptions that are made to arrive at means and error bars. 
+
+Using this model for histograms, the statistics and relative
+differences and confidence intervals are calculated.
+Note that the average density across clients is the
+representative distribution of a typical histogram value for a typical client, _not_ the distribution of the average histogram response for a
+client. 
+   - Output Table: `r tbl.analyzed`
+
+Code for the 2nd-stage ETL and dashboard can be viewed
+[here](https://github.com/mozilla/fission-monitoring-nightly).
+
+
+(There is one exception, checkerboard severity, where reduce the histogram to an average for a client)
+
+#### Dashboard
+
+The code for this RMarkdown dashboard is available
+[here](https://github.com/mozilla/fission-monitoring-nightly/blob/main/dashboard.Rmd).
+
+
+#### Appendix
+
+For the approach taken to compute error bars, please see [this Google Doc](https://docs.google.com/document/d/1ipy1oFIKDvHr3R6Ku0goRjS11R1ZH1z2gygOGkSdqUg/edit)
+describing how it is done for GLAM.
