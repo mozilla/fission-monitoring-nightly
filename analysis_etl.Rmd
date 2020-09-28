@@ -17,48 +17,48 @@ params:
 
 <style>
 body {
-    line-height: 1.4em;
-    width: 100%;
-    }
+line-height: 1.4em;
+width: 100%;
+}
 .plotly {
-    text-align: center;
-    width: 75vw;
-    position: relative;
-    margin-left: calc((100% - 75vw)/2);
+text-align: center;
+width: 75vw;
+position: relative;
+margin-left: calc((100% - 75vw)/2);
 }
 .zimg img {
-    text-align: center;
-    width: 75vw;
-    position: relative;
-    margin-left: calc((100% - 75vw)/2);
+text-align: center;
+width: 75vw;
+position: relative;
+margin-left: calc((100% - 75vw)/2);
 }
 .r {
-    background-color: white;
-    border: 0;
-        }
-        
+background-color: white;
+border: 0;
+}
+
 pre code, pre, code {
-  white-space: pre !important;
-  overflow-x: scroll !important;
-  word-break: keep-all !important;
-  word-wrap: initial !important;
+white-space: pre !important;
+overflow-x: scroll !important;
+word-break: keep-all !important;
+word-wrap: initial !important;
 }
 .caption {
-    font-size: 80%;
-    font-style: italic;
-    font-weight:bold;
-        }
+font-size: 80%;
+font-style: italic;
+font-weight:bold;
+}
 
 caption {
-    font-size: 80%;
-    font-style: italic;
-    font-weight: bold;
-        }
+font-size: 80%;
+font-style: italic;
+font-weight: bold;
+}
 
 h3, .h3 {
-    margin-top: 100px;
-    }
-    
+margin-top: 100px;
+}
+
 
 </style>
 
@@ -77,39 +77,41 @@ library(dplyr)
 ```
 
 
+# Arguments
 ```{r args}
-args <- params$args
-is.debug <- FALSE # if(!is.null(args$debug)) args$debug else FALSE
+print('ETL configuration')
+project_id <- Sys.getenv("BQ_BILLING_PROJECT_ID")
+print(glue('BigQuery Billing project: {project_id}'))
+tbl.main <- Sys.getenv('BQ_INPUT_MAIN_TABLE')
+print(glue('Import - Main table: {tbl.main}'))
+tbl.crashes <- Sys.getenv('BQ_INPUT_CRASH_TABLE')
+print(glue('Import - Crash table: {tbl.crashes}'))
+tbl.analyzed <- Sys.getenv('BQ_OUTPUT_TABLE')
+print(glue('Import - Crash table: {tbl.analyzed}'))
+
+is.debug <- case_when(
+  Sys.getenv("DEBUG") == 'false' ~ FALSE,
+  Sys.getenv("DEBUG") == 'true' ~ TRUE,
+  TRUE ~ FALSE
+)
+print(glue('Debugging ETL pipeline: {is.debug}'))
+
+# Minimum build ID to process. Apply this as a query filter to retrieve only new, unprocessed, builds. 
+min_build_id <- case_when(
+  Sys.getenv("MIN_BUILD_ID") == '' ~ bq_project_query(project_id, build_min_build_id_query(tbl.main, num_build_dates)) %>%
+    bq_table_download() %>%
+    pull(max_build_date) %>% 
+    format('%Y%m%d'),
+  TRUE ~ Sys.getenv("MIN_BUILD_ID") 
+)
+print(glue('Processing builds >= {min_build_id}'))
+
 ```
 
 ```{r bug_fixes}
 options(scipen = 20) # bigrquery bug: https://github.com/r-dbi/bigrquery/issues/395 
 ```
 
-```{r big_query}
-# if (is.debug){
-#   bq_auth('/Users/chygelund/.config/gcloud/application_default_credentials.json')
-# }else{
-#   bq_auth(args$creds_path)
-# }
-```
-
-# Filters
-
-Query for previously processed builds. Apply this as a query filter to retrieve only new, unprocessed, builds. 
-
-```{r filters}
-project_id <- Sys.getenv("BQ_BILLING_PROJECT_ID")
-
-if (is.debug){
-  max_build_id <- max_build_id <- '20200908' #TODO: Define from query and as supplied arg
-}else{
-  max_build_id <- bq_project_query(project_id, build_max_build_id_query(tbl.main, num_build_dates)) %>%
-    bq_table_download() %>%
-    pull(max_build_date) %>% 
-    format('%Y%m%d')
-}
-```
 
 # Histogram Aggregation
 
@@ -125,19 +127,32 @@ hists.raw <- list()  #TODO: For initial EDA: remove after histograms well-unders
 
 ```{r hist_agg}
 print('Processing histograms')
-for(probe in names(probes.hist)){
+process_histograms <- function(probe) {
+  tryCatch({
     print(probe)
-    hist_query <- build_hist_query(probes.hist[[probe]], slug, tbl.main, max_build_id)
+    hist_query <-
+      build_hist_query(probes.hist[[probe]], slug, tbl.main, min_build_id)
     hist <- bq_project_query(project_id, hist_query)
     hist.df <- bq_table_download(hist) %>%
       as.data.table()
     
-    results.hist[[probe]] <- summarize.hist(hist.df) %>% 
+    results.hist[[probe]] <- summarize.hist(hist.df) %>%
       mutate(probe = probe) %>%
       rename(branch = what)
     
     # hists.raw[[probe]] <- hist.df
-    break  
+  },
+  error = function(err) {
+    # error handler picks up where error was generated
+    print(glue("ERROR processsing {probe}: {err}"))
+    return(NULL)
+  })
+}
+
+for (probe in names(probes.hist)) {
+  process_histograms(probe)
+  if (is.debug)
+    break
 }
 
 # save(hists.raw, results.hist, file='hists_raw.2df')
@@ -148,43 +163,59 @@ for(probe in names(probes.hist)){
 
 Pull the each's build per daily average of the scalars. 
 ```{r scalar_import}
-# scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, slug, tbl.main, max_build_id))
-# scalar.df <- bq_table_download(scalar) %>%
-#   as.data.table()
+scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, slug, tbl.main, min_build_id))
+scalar.df <- bq_table_download(scalar) %>%
+  as.data.table()
 ```
+
 ```{r scalar_agg_var}
 results.scalar <- list()
 ```
 
 ```{r scalar_agg, warning=FALSE}
-# bs_replicates <- 20 #TODO: Debugging
-# 
-# for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))){
-#   print(probe)
-#   results.scalar[[probe]] <- scalar.df[get(probe)<quantile(get(probe), perc.high, na.rm = TRUE),
-#                                   summarize.scalar(.SD[,list(id,branch,x=get(probe))], "x", bs_replicates, stat=mean.narm),
-#                                   by=build_id][, probe := probe][order(build_id, what),] %>%
-#                               rename(branch = what)
-#   break
-# }
+if (is.debug)
+  bs_replicates <- 20
+
+process_scalar <- function(probe){
+  tryCatch({
+      results.scalar[[probe]] <-
+    scalar.df[get(probe) < quantile(get(probe), perc.high, na.rm = TRUE),
+              summarize.scalar(.SD[, list(id, branch, x =
+                                            get(probe))], "x", bs_replicates, stat = mean.narm),
+              by = build_id][, probe := probe][order(build_id, what), ] %>%
+    rename(branch = what)
+  },
+  error = function(err) {
+    # error handler picks up where error was generated
+    print(glue("ERROR processsing {probe}: {err}"))
+    return(NULL)
+  })
+}
+
+for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))) {
+  print(probe)
+  if (is.debug)
+    break
+}
 ```
 
 # Crash Aggregation
 
 ```{r crash_import}
-# crashes <-  bq_project_query(project_id, build_crash_query(probes.crashes, slug, tbl.crashes, max_build_id))
-# crashes.df <- bq_table_download(crashes) %>%
-#   as.data.table()
+crashes <-  bq_project_query(project_id, build_crash_query(probes.crashes, slug, tbl.crashes, min_build_id))
+crashes.df <- bq_table_download(crashes) %>%
+  as.data.table()
 ```
 
 ```{r}
-# FIXME: 
-# crashes.df <- crashes.df %>%
-#   filter(build_id != '20200923') %>%
-#   mutate(branch = case_when(
-#     branch == 'false' ~ 'disabled',
-#     TRUE ~ 'enabled'
-#   ))
+# FIXME: remove filter
+crashes.df <- crashes.df %>%
+  filter(build_id != '20200923') %>%
+  mutate(branch = case_when(
+    branch == 'false' ~ 'disabled',
+    TRUE ~ 'enabled'
+  )) %>%
+  as.data.table()
 ```
 
 ```{r crashes_agg_var}
@@ -193,17 +224,31 @@ results.crashes <- list()
 
 Process the per usage hour probes:
 ```{r crashes_agg, warning=FALSE}
-# for (probe in names(probes.crashes)){
-#   print(probe)
-#   if (probe == 'STARTUP_CRASHES') next #FIXME: Error in boot(d, function(x, i) { : no data in call to 'boot'
-#   probe_per_hour <- paste(probe, '_PER_HOUR', sep='') 
-#   # probe_per_hour <- probe
-#   results.crashes[[probe_per_hour]] <- crashes.df[get(probe_per_hour)<quantile(get(probe_per_hour), perc.high, na.rm = TRUE),
-#                                   summarize.scalar(.SD[,list(id,branch,x=get(probe_per_hour))], "x", bs_replicates, stat=mean.narm),
-#                                   by=build_id][, probe := probe_per_hour][order(build_id, what),] %>%
-#                               rename(branch = what)
-#   break
-# }
+proccess_crash <- function(probe) {
+  tryCatch({
+    print(probe)
+    probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
+    # probe_per_hour <- probe
+    results.crashes[[probe_per_hour]] <-
+      crashes.df[get(probe_per_hour) < quantile(get(probe_per_hour), perc.high, na.rm = TRUE),
+                 summarize.scalar(.SD[, list(id, branch, x =
+                                               get(probe_per_hour))], "x", bs_replicates, stat = mean.narm),
+                 by = build_id][, probe := probe_per_hour][order(build_id, what), ] %>%
+      rename(branch = what)
+  },
+  error = function(err) {
+    # error handler picks up where error was generated
+    print(glue("ERROR processsing {probe}: {err}"))
+    return(NULL)
+  })
+}
+
+for (probe in names(probes.crashes)) {
+  if (probe == 'STARTUP_CRASHES')
+    next #FIXME: Error in boot(d, function(x, i) { : no data in call to 'boot'
+  if (is.debug)
+    break
+}
 ```
 
 # Export
@@ -212,77 +257,51 @@ Combine the individual probes into a single `data.frame`
 
 ```{r combine}
 final.df <- rbindlist(results.hist) %>%
-  # rbind(., rbindlist(results.scalar)) %>%
-  # rbind(., rbindlist(results.crashes)) %>%
+  rbind(., rbindlist(results.scalar)) %>%
+  rbind(., rbindlist(results.crashes)) %>%
   mutate(date_computed = Sys.Date())
 ```
 
 Remove records corresponding to the newest builds
 
 ```{r delete_processed_builds}
-# bq_project_query(project_id, build_delete_build_records_query(tbl.analyzed, max_build_id ))
-
-# bq_auth('/Users/chygelund/.config/gcloud/application_default_credentials.json')
-# con <- dbConnect(
-#         bigrquery::bigquery(),
-#         project = project_id,
-#         dataset = 'cdowhygleund'
-#     )
-# dbGetQuery(con, build_delete_build_records_query(tbl.analyzed, max_build_id ), n=200)
-
-
+bq_project_query(project_id, build_delete_build_records_query(tbl.analyzed, min_build_id ))
 ```
 
 Export finalized dataset to BigQuery for display in dashboard
-**FIXME**: Temporarily using `moz-fx-data-bq-data-science.cdowhygelund.fission_monitoring_analyzed_v1` until credential issue is solved.
 
 ```{r export}
-# 
-# # FIXME: might need the following (needs to be tested)
-# token <- gargle::credentials_app_default("https://www.googleapis.com/auth/bigquery")
-# token$params$as_header <- TRUE
-# set_access_cred(token)
-# 
- bq_table(project = 'moz-fx-data-shared-prod',
-   #project = project_id,
-          dataset = "analysis",
-          #dataset = 'cdowhygelund',
-          table   = "fission_monitoring_analyzed_v1") %>%
-   bq_table_upload(values = final.df,
-                   create_disposition = "CREATE_IF_NEEDED",
-                   #write_disposition = "WRITE_APPEND",
-                   write_disposition = "WRITE_TRUNCATE",
-                   fields = as_bq_fields(final.df) )
+tbl.analyzed.chunks <-
+  strsplit(Sys.getenv('BQ_OUTPUT_TABLE'), '\\.')[[1]]
 
-
-# sguha method using command line: might be necessary to circumvent credentials issue
-
-#atemp <- tempfile()
-#fwrite(final.df, file=atemp,row.names=FALSE,quote=TRUE,na=0)
-#l <- glue("bq load --noreplace   --project_id='moz-fx-data-bq-data-science'  --source_format=CSV --skip_leading_rows=1 --null_marker=NA",
-#          " \"{generate_shell_export_tblname(tbl.analyzed)}\" {atemp} ./tbl_analyzed_fields.json")
-#loginfo(l)
-#system(l)
+bq_table(project = tbl.analyzed.chunks[1],
+         dataset = tbl.analyzed.chunks[2],
+         table   = tbl.analyzed.chunks[3]) %>%
+  bq_table_upload(
+    values = final.df,
+    create_disposition = "CREATE_IF_NEEDED",
+    write_disposition = "WRITE_APPEND",
+    # write_disposition = "WRITE_TRUNCATE",
+    fields = as_bq_fields(final.df),
+    billing = project_id
+  )
 ```
 
 
 # TODO
 
-* Delete from the analysis table anything that has a buildID that is within `final.df`
 * For scalar query, perform dense_rank on client_id to get `id` field
 * Deal with scaling on crashes_per_usage_hour: add a fudge factor? (e.g. crashes per 1000 hours)
 * Scalar boostrapping should all be done with same replicates. Statistically more sound, and MUCH faster. 
 * dynamically name control/treatment in stats.R
 
 * Missing Analysis Fields
-  - Add total number of unique users per branch per build
-  - 
+- Add total number of unique users per branch per build
+- 
 * should "MEMORY_TOTAL" = 'payload.processes.histograms.memory_total' and not content?
 * Purpose of: sum(coalesce(VALUE_SUM(checkerboard_severity,500))) 
 * Handling `device_resets`?
 
 
 # FIXME
-* Exported table should be in `moz-fx-data-shared-prod`. Issues regarding `bigrquery` and credentials. 
-
 * `FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_PER_LOADED_TABS` is a composition of many histograms. Only using `payload.histograms.fx_number_of_unique_site_origins_per_loaded_tabs_1` for POC. 

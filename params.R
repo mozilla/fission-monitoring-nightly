@@ -1,20 +1,10 @@
-#### BigQuery-specific ####
-#project_id <- 'moz-fx-data-bq-data-science'
-fission_tables <- list(
-  project = 'moz-fx-data-shared-prod',
-  dataset = 'analysis',
-  main = 'fission_monitoring_main_v1',
-  crash = 'fission_monitoring_crash_v1',
-  analyzed = 'fission_monitoring_analyzed_v1'
-)
-
 #### Experiment-specific ####
 
-tbl.main <- '`moz-fx-data-shared-prod`.analysis.fission_monitoring_main_v1'
-
-tbl.crashes <- '`moz-fx-data-shared-prod`.analysis.fission_monitoring_crash_v1'
-
-tbl.analyzed <- '`moz-fx-data-shared-prod`.analysis.fission_monitoring_analyzed_v1'
+# tbl.main <- '`moz-fx-data-shared-prod`.analysis.fission_monitoring_main_v1'
+# 
+# tbl.crashes <- 'moz-fx-data-shared-prod.analysis.fission_monitoring_crash_v1'
+# 
+# tbl.analyzed <- 'moz-fx-data-shared-prod.analysis.fission_monitoring_analyzed_v1'
 
 slug <- 'bug-1622934-pref-webrender-continued-v2-nightly-only-nightly-76-80'
 

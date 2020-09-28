@@ -51,7 +51,7 @@ b0 AS (
   SELECT c_id, build_id, branch, key, sum(coalesce(value,0)) AS value
   FROM a 
   CROSS JOIN UNNEST(x)
-  WHERE build_id >= {max_build_id}
+  WHERE build_id >= {min_build_id}
   GROUP BY 1,2,3,4 
   ),
 b1 AS (
@@ -96,7 +96,7 @@ SELECT
 {query_crashes_probes},
 {query_crashes_per_hour}
 FROM crashes
-WHERE build_id >= {max_build_id}
+WHERE build_id >= {min_build_id}
 "
 
 scalar_query_base <- "
@@ -122,7 +122,7 @@ SELECT
 {query_scalar_sum_2}
 {query_scalar_max_2}
 FROM daily_agg
-WHERE buildid >= {max_build_id}
+WHERE buildid >= {min_build_id}
 GROUP BY 1, 2, 3
 "
 
@@ -136,7 +136,7 @@ WHERE
 delete_build_records_query_base <- "
 DELETE 
 FROM {tbl} 
-WHERE build_id >='{max_build_id}'
+WHERE build_id >={min_build_id}
 "  
 #### Query Helpers ####
 build_main_query <- function(probes.hist, slug, tbl){ ##TODO: Add in scalar probes
@@ -152,16 +152,16 @@ build_main_query <- function(probes.hist, slug, tbl){ ##TODO: Add in scalar prob
   return(main_query)
 }
 
-build_hist_query <- function(probe.hist, slug, tbl, max_build_id, hist_query_base. = hist_query_base){
+build_hist_query <- function(probe.hist, slug, tbl, min_build_id, hist_query_base. = hist_query_base){
   return(glue(hist_query_base., 
               probe_hist = probe.hist,
               tbl = tbl,
-              max_build_id = max_build_id
+              min_build_id = min_build_id
               )
   )
 }
 
-build_crash_query <- function(probes.crashes, slug, tbl, max_build_id, crashes_query_base. = crashes_query_base){
+build_crash_query <- function(probes.crashes, slug, tbl, min_build_id, crashes_query_base. = crashes_query_base){
   query_crashes <- paste('  ', 'SUM(', unlist(probes.crashes), ') AS ', names(probes.crashes), sep = '', collapse = ',\n') 
   query_crashes_per_hour <- paste('  SAFE_DIVIDE(', names(probes.crashes), ', USAGE_HOURS)', ' AS ', names(probes.crashes), '_PER_HOUR', sep='', collapse=',\n')
   return(glue(crashes_query_base.,
@@ -169,11 +169,11 @@ build_crash_query <- function(probes.crashes, slug, tbl, max_build_id, crashes_q
               query_crashes = query_crashes,
               query_crashes_probes = paste('  ', names(probes.crashes), collapse=',\n'),
               query_crashes_per_hour = query_crashes_per_hour,
-              max_build_id = max_build_id
+              min_build_id = min_build_id
   ))
 }
 
-build_scalar_query <- function(probes.scalar.sum, probes.scalar.max, slug, tbl, max_build_id, scalar_query_base. = scalar_query_base){
+build_scalar_query <- function(probes.scalar.sum, probes.scalar.max, slug, tbl, min_build_id, scalar_query_base. = scalar_query_base){
   query_scalar_sum <- dplyr::case_when(
     !is.null(probes.scalar.sum) ~ paste(paste('  ', 'SUM(COALESCE(', unlist(probes.scalar.sum), ', 0)) AS ', names(probes.scalar.sum), sep = '', collapse = ',\n'), ','),
     TRUE ~ ''
@@ -197,21 +197,21 @@ build_scalar_query <- function(probes.scalar.sum, probes.scalar.max, slug, tbl, 
               query_scalar_sum_2 = query_scalar_sum_2,
               query_scalar_max_2 = query_scalar_max_2,
               tbl = tbl,
-              max_build_id = max_build_id
+              min_build_id = min_build_id
   )
   )
 }
 
-build_max_build_id_query <- function(tbl, num_build_dates){
+build_min_build_id_query <- function(tbl, num_build_dates){
   return(
     glue(build_id_query_base, tbl=tbl, num_build_dates = num_build_dates)
     )
 }
 
-build_delete_build_records_query <- function(tbl, max_build_id){
+build_delete_build_records_query <- function(tbl, min_build_id){
   return(glue(delete_build_records_query_base,
               tbl = tbl,
-              max_build_id = max_build_id)
+              min_build_id = min_build_id)
          )
 }
 
