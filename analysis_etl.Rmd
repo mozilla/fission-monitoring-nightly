@@ -128,7 +128,7 @@ hists.raw <- list()  #TODO: For initial EDA: remove after histograms well-unders
 ```{r hist_agg}
 print('Processing histograms')
 process_histograms <- function(probe) {
-  tryCatch({
+  hist.res <- tryCatch({
     print(probe)
     hist_query <-
       build_hist_query(probes.hist[[probe]], slug, tbl.main, min_build_id)
@@ -139,14 +139,13 @@ process_histograms <- function(probe) {
      hist.summary <- summarize.hist(hist.df) %>%
        mutate(probe = probe) %>%
        rename(branch = what)
-
-     hist.raw <- hist.df
+     list(raw = hist.df, summary = hist.summary)
    },
   error = function(err) {
      print(glue("ERROR processsing {probe}: {err}"))
-     return(NULL)
+     return(c(raw = NULL, summary = NULL))
    })
-  return(list(raw = hist.df, summary = hist.summary)) 
+  return(hist.res) 
 }
 
 for (probe in names(probes.hist)) {
@@ -182,8 +181,7 @@ if (is.debug)
   bs_replicates <- 20
 
 process_scalar <- function(probe) {
-  tryCatch({
-    scalar.res <-
+  scalar.res <- tryCatch({
       scalar.df[get(probe) < quantile(get(probe), perc.high, na.rm = TRUE),
                 summarize.scalar(.SD[, list(id, branch, x =
                                               get(probe))], "x", bs_replicates, stat = mean.narm),
@@ -235,9 +233,8 @@ results.crashes <- list()
 Process the per usage hour probes:
 ```{r crashes_agg, warning=FALSE}
 process_crash <- function(probe) {
-  tryCatch({
+  crashes.res <- tryCatch({
     print(probe)
-    crash_res <-
       crashes.df[get(probe_per_hour) < quantile(get(probe_per_hour), perc.high, na.rm = TRUE),
                  summarize.scalar(.SD[, list(id, branch, x =
                                                get(probe_per_hour))], "x", bs_replicates, stat = mean.narm),
@@ -249,12 +246,10 @@ process_crash <- function(probe) {
     print(glue("ERROR processsing {probe}: {err}"))
     return(NULL)
   })
-  return(crash_res)
+  return(crashes.res)
 }
 
 for (probe in names(probes.crashes)) {
-  if (probe == 'STARTUP_CRASHES')
-    next #FIXME: Error in boot(d, function(x, i) { : no data in call to 'boot'
   probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
   results.crashes[[probe_per_hour]] <- process_crash(probe_per_hour)
   if (is.debug)
