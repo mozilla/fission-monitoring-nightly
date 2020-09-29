@@ -1,7 +1,7 @@
 FROM rocker/verse:3.5.0
 RUN mkdir /tmp/output/
 RUN R -e "options(repos =  list(CRAN = 'https://cran.microsoft.com/snapshot/2020-05-07/')); \
-          pkgs <- c('vegawidget','parsedate','logging', 'Hmisc', 'ggplot2','glue','DBI','bigrquery','gargle','data.table','knitr','rmarkdown'); \
+          pkgs <- c('vegawidget','parsedate','logging', 'Hmisc', 'ggplot2','glue','DBI','bigrquery','gargle','data.table','knitr','rmarkdown', 'dplyr'); \
           install.packages(pkgs,dep=TRUE);"
 
 RUN apt-get update && apt-get install -y \
