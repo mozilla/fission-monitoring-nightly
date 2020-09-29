@@ -300,12 +300,11 @@ bq_table(project = tbl.analyzed.chunks[1],
 # TODO
 
 * For scalar query, perform dense_rank on client_id to get `id` field
-* Deal with scaling on crashes_per_usage_hour: add a fudge factor? (e.g. crashes per 1000 hours)
 * Scalar boostrapping should all be done with same replicates. Statistically more sound, and MUCH faster. 
 * dynamically name control/treatment in stats.R
 
 * Missing Analysis Fields
-- Add total number of unique users per branch per build
+- Add total number of unique users per branch per build: this is availabe in Grafana.
 - 
 * should "MEMORY_TOTAL" = 'payload.processes.histograms.memory_total' and not content?
 * Purpose of: sum(coalesce(VALUE_SUM(checkerboard_severity,500))) 
