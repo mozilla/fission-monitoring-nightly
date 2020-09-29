@@ -124,7 +124,6 @@ max_build_id <- bq_project_query(project_id,
 
 Information for builds till `r as.Date(as.character(max_build_id), format = '%Y%m%d')`.
 
-
 ##  {.tabset}
 
 ### Performance

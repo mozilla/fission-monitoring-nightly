@@ -31,7 +31,6 @@ b AS (
 c AS ( 
   SELECT c_id, buildid, branch, key, coalesce(sum(value),0) AS value 
   FROM b group by 1,2,3,4) -- STAGE 1
-
 SELECT * 
   FROM c 
 ORDER BY buildid, branch,key
@@ -87,7 +86,6 @@ WITH crashes as (
 FROM {tbl}
 GROUP BY 1, 2, 3
 )
-
 SELECT
   client_id as id,
   build_id,
@@ -114,7 +112,6 @@ WITH daily_agg as (
     `moz-fx-data-shared-prod`.udf.get_key(environment.experiments,'{slug}').branch IS NOT NULL
   GROUP BY 1, 2, 3, 4
 )
-
 SELECT 
   client_id as id,
   branch,
@@ -156,7 +153,7 @@ build_main_query <- function(probes.hist, slug, tbl){ ##TODO: Add in scalar prob
                     query_hist = query_hist,
                     slug = slug,
                     tbl = tbl
-                    )
+  )
   return(main_query)
 }
 
@@ -165,7 +162,7 @@ build_hist_query <- function(probe.hist, slug, tbl, min_build_id, hist_query_bas
               probe_hist = probe.hist,
               tbl = tbl,
               min_build_id = min_build_id
-              )
+  )
   )
 }
 
@@ -213,14 +210,14 @@ build_scalar_query <- function(probes.scalar.sum, probes.scalar.max, slug, tbl, 
 build_min_build_id_query <- function(tbl, num_build_dates){
   return(
     glue(build_id_query_base, tbl=tbl, num_build_dates = num_build_dates)
-    )
+  )
 }
 
 build_delete_build_records_query <- function(tbl, min_build_id){
   return(glue(delete_build_records_query_base,
               tbl = tbl,
               min_build_id = min_build_id)
-         )
+  )
 }
 
 build_analyzed_probe_query <- function(tbl, probe){
