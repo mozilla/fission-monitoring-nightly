@@ -131,7 +131,7 @@ Information for builds till `r as.Date(as.character(max_build_id), format = '%Y%
 ```{r eval=TRUE}
 # query histogram datasets
 hists <- list()
-for (probe in names(probes.hist)){
+for (probe in c(names(probes.hist), 'GFX_OMTP_PAINT_WAIT_TIME_RATIO')){
   # probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
   hists[[probe]] <- bq_project_query(project_id, build_analyzed_probe_query(tbl.analyzed, probe = probe)) %>%
     bq_table_download() %>%
@@ -157,40 +157,16 @@ vw(list(
 ```
 
 
+
+
+
+```{r eval=TRUE}
+
+```
+
 ### Stability
 
 #### Crash Rates: Detail (OOM,GPU,Content, Main)
-
-```{r eval=TRUE,fig.cap='Fig11. (a) Content, (b) Main, (c) GPU, and (d) OOM Crash Rates(/Profile/1000 Hrs)'}
-# query analyzed per hour data
-# crashes <- list()
-# for (probe in names(probes.crashes)){
-#   probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
-#   crashes[[probe_per_hour]] <- bq_project_query(project_id, build_analyzed_probe_query(tbl.analyzed, probe = probe_per_hour)) %>%
-#     bq_table_download() %>%
-#     as.data.table()
-# }
-# 
-# ccr <- create.figure(crashes[['CONTENT_CRASHES_PER_HOUR']], title="(a) Content Crash Rate/Profile/1000 Hrs",
-#                     yaxislab='Estimate',width=W/1.85,height=H,
-#                     LA=90)
-# cmr <- create.figure(crashes[['MAIN_CRASHES_PER_HOUR']], title="(b) Main Crash Rate/Profile/1000 Hrs",
-#                     yaxislab='Estimate',width=W/1.85,height=H,
-#                     LA=90)
-# cgr <- create.figure(crashes[['GPU_CRASHES_PER_HOUR']], title="(c) GPU Crash Rate/Profile/1000 Hrs",
-#                     yaxislab='Estimate',width=W/1.85,height=H,
-#                     LA=90)
-# cor <- create.figure(crashes[['GPU_CRASHES_PER_HOUR']],title="(d) OOM Crash Rate/Profile/1000 Hrs",
-#                     yaxislab='Estimate',width=W/1.85,height=H,
-#                     LA=90)
-# vw(list(
-#     config = list( legend = list(direction='horizontal',orient='top',title=NULL)),
-#     vconcat=list(
-#             list(hconcat = list( ccr,cmr)),
-#             list(hconcat = list( cgr,cor))
-#         )
-#         ) ,TRUE)
-```
 
 
 ```{r eval=TRUE}
@@ -219,6 +195,36 @@ vw(list(
     config = list( legend = list(direction='horizontal',orient='top',title=NULL)),
     vconcat=crash_plots
         ) ,TRUE)
+```
+
+### Usage
+
+```{r eval=TRUE}
+usage <- list()
+for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))){
+  if (probe == 'GFX_OMTP_PAINT_WAIT_TIME_RATIO') next
+  usage[[probe]] <- bq_project_query(project_id, build_analyzed_probe_query(tbl.analyzed, probe = probe)) %>%
+    bq_table_download() %>%
+    as.data.table()
+}
+
+usage_plots <- list()
+
+for (probe in names(usage)){
+  df <- usage[[probe]]
+  if (nrow(df) > 0) {
+    # print(probe)
+    usage_plots[[length(usage_plots) + 1]] <- create.figure(df, title=probe,
+                    yaxislab='Estimate',width=W/1.85,height=H,
+                    LA=90)
+  }
+}
+
+vw(list(
+    config = list( legend = list(direction='horizontal',orient='top',title=NULL)),
+    vconcat=usage_plots
+        ) ,TRUE)
+  
 ```
 
 ### About

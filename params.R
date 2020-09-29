@@ -36,12 +36,23 @@ probes.hist <- list(
   "GC_MS" = 'payload.processes.content.histograms.gc_ms', 
   "GC_SLICE_DURING_IDLE" = 'payload.histograms.gc_slice_during_idle',
   "MEMORY_UNIQUE_CONTENT_STARTUP" = 'payload.processes.content.histograms.memory_unique_content_startup',
-  'FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_PER_LOADED_TABS' = 'payload.histograms.fx_number_of_unique_site_origins_per_loaded_tabs_1',
-  'FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_ALL_TABS' = 'payload.histograms.fx_number_of_unique_site_origins_all_tabs',
   'TIME_TO_FIRST_CONTENTFUL_PAINT_MS' = 'payload.histograms.time_to_first_contentful_paint_ms',
   'TIME_TO_FIRST_INTERACTION_MS' = 'payload.histograms.time_to_first_interaction_ms',
   'FX_PAGE_LOAD_MS_2' = 'payload.histograms.fx_page_load_ms_2',
-  "LOADED_TAB_COUNT" = 'payload.histograms.loaded_tab_count'
+  "LOADED_TAB_COUNT" = 'payload.histograms.loaded_tab_count',
+  'FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_PER_LOADED_TABS_1' = 'payload.histograms.fx_number_of_unique_site_origins_per_loaded_tabs_1',
+  'FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_PER_LOADED_TABS_2_4' = 'payload.histograms.fx_number_of_unique_site_origins_per_loaded_tabs_2_4',
+  'FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_PER_LOADED_TABS_5_9' = 'payload.histograms.fx_number_of_unique_site_origins_per_loaded_tabs_5_9',
+  'FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_PER_LOADED_TABS_10_14' = 'payload.histograms.fx_number_of_unique_site_origins_per_loaded_tabs_10_14',
+  'FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_PER_LOADED_TABS_15_19' = 'payload.histograms.fx_number_of_unique_site_origins_per_loaded_tabs_15_19',
+  'FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_PER_LOADED_TABS_20_24' = 'payload.histograms.fx_number_of_unique_site_origins_per_loaded_tabs_20_24',
+  'FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_PER_LOADED_TABS_25_29' = 'payload.histograms.fx_number_of_unique_site_origins_per_loaded_tabs_25_29',
+  'FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_PER_LOADED_TABS_30_34' = 'payload.histograms.fx_number_of_unique_site_origins_per_loaded_tabs_30_34',
+  'FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_PER_LOADED_TABS_35_39' = 'payload.histograms.fx_number_of_unique_site_origins_per_loaded_tabs_35_39',
+  'FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_PER_LOADED_TABS_40_44' = 'payload.histograms.fx_number_of_unique_site_origins_per_loaded_tabs_40_44',
+  'FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_PER_LOADED_TABS_45_49' = 'payload.histograms.fx_number_of_unique_site_origins_per_loaded_tabs_45_49',
+  'FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_PER_LOADED_TABS_50_PLUS' = 'payload.histograms.fx_number_of_unique_site_origins_per_loaded_tabs_50_plus',
+  'FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_ALL_TABS' = 'payload.histograms.fx_number_of_unique_site_origins_all_tabs'
 )
 
 probes.scalar.sum <- list(
