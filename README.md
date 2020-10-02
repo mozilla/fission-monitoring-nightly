@@ -20,4 +20,4 @@ Additional parameters:
 
 * `-e GS_BUCKET`: Uploads `dashboard.html` to `$GCS_BUCKET/dashboard/dashboard.html`. In addition, uploads rendered ETL markdown to `$GCS_BUCKET/etl/analysis_etl.html`.
 * `-e DEBUG=true`: debugging purposes (e.g., only process a couple probes to ensure ETL works as intended).
-* `-e MIN_BUILD_ID`: Minimum `app_build_id` to process. This defaults to previous day days. 
+* `-e MIN_BUILD_ID`: Minimum `app_build_id` to process. This defaults to previous 10 days worth of builds. 
