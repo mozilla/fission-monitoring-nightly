@@ -244,7 +244,7 @@ for specific crash types`.
    
 The [second stage analyzes](https://github.com/mozilla/fission-monitoring-nightly/blob/main/analysis_etl.Rmd) these tables for specific probes defined [here](https://github.com/mozilla/fission-monitoring-nightly/blob/main/params.R#L24).
 It filters these 1st stage ETL tables to only process the last `r num_build_dates` of Nightly builds. In addition, it calculates means, relative difference of means, 
-and confidence intervals using bootstraping (`r bs_replicates` samples). All metrics are per client and each client has the same weight. For histogram aggregation, 
+and confidence intervals using bootstrapping (`r bs_replicates` samples). All metrics are per client and each client has the same weight. For histogram aggregation, 
 the method employed is that same as used in GLAM:  
 
 1. Aggregate clients responses for a given histogram to one response (e.g.: add all values for same bucket
@@ -257,6 +257,7 @@ differences and confidence intervals are calculated.
 Note that the average density across clients is the
 representative distribution of a typical histogram value for a typical client, _not_ the distribution of the average histogram response for a
 client. 
+
    - Output Table: `r tbl.analyzed`
 
 Code for the 2nd-stage ETL and dashboard can be viewed
