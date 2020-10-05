@@ -1,6 +1,6 @@
 library(rmarkdown)
 
-setwd('/app')
+setwd('/app/analysis')
 
 render('analysis_etl.Rmd', output_dir = "/tmp/output/")
 
