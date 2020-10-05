@@ -257,6 +257,7 @@ differences and confidence intervals are calculated.
 Note that the average density across clients is the
 representative distribution of a typical histogram value for a typical client, _not_ the distribution of the average histogram response for a
 client. 
+
    - Output Table: `r tbl.analyzed`
 
 Code for the 2nd-stage ETL and dashboard can be viewed
