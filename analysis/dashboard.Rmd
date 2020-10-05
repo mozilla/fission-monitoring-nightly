@@ -80,7 +80,6 @@ p.caption ol,li {
 ```{r echo=FALSE,warning=FALSE, results='hide',message=FALSE,message=FALSE}
 source("query.R")
 source("plot.R")
-source('dashboard_params.R')
 source('params.R')
 ```
 
@@ -99,6 +98,13 @@ knitr::opts_chunk$set(  cache=FALSE,echo=FALSE,warning=FALSE,message=FALSE,eval=
 
 ```{r eval=TRUE}
 W <- 1000; H <- 200;
+```
+
+```{r eval=TRUE}
+project_id <- Sys.getenv("BQ_BILLING_PROJECT_ID")
+tbl.main <- Sys.getenv('BQ_INPUT_MAIN_TABLE')
+tbl.crashes <- Sys.getenv('BQ_INPUT_CRASH_TABLE')
+tbl.analyzed <- Sys.getenv('BQ_OUTPUT_TABLE')
 ```
 
 
@@ -132,7 +138,6 @@ Information for builds till `r as.Date(as.character(max_build_id), format = '%Y%
 # query histogram datasets
 hists <- list()
 for (probe in c(names(probes.hist), 'GFX_OMTP_PAINT_WAIT_TIME_RATIO')){
-  # probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
   hists[[probe]] <- bq_project_query(project_id, build_analyzed_probe_query(tbl.analyzed, probe = probe)) %>%
     bq_table_download() %>%
     as.data.table()
@@ -156,13 +161,6 @@ vw(list(
         ) ,TRUE)
 ```
 
-
-
-
-
-```{r eval=TRUE}
-
-```
 
 ### Stability
 
@@ -246,7 +244,7 @@ for specific crash types`.
    
 The [second stage analyzes](https://github.com/mozilla/fission-monitoring-nightly/blob/main/analysis_etl.Rmd) these tables for specific probes defined [here](https://github.com/mozilla/fission-monitoring-nightly/blob/main/params.R#L24).
 It filters these 1st stage ETL tables to only process the last `r num_build_dates` of Nightly builds. In addition, it calculates means, relative difference of means, 
-and confidence intervals using bootstraping (`r bs_replicates` samples). All metrics are per client and each client has the same weight. For histogram aggregation, 
+and confidence intervals using bootstrapping (`r bs_replicates` samples). All metrics are per client and each client has the same weight. For histogram aggregation, 
 the method employed is that same as used in GLAM:  
 
 1. Aggregate clients responses for a given histogram to one response (e.g.: add all values for same bucket
@@ -259,6 +257,7 @@ differences and confidence intervals are calculated.
 Note that the average density across clients is the
 representative distribution of a typical histogram value for a typical client, _not_ the distribution of the average histogram response for a
 client. 
+
    - Output Table: `r tbl.analyzed`
 
 Code for the 2nd-stage ETL and dashboard can be viewed

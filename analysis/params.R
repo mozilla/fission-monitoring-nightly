@@ -1,24 +1,6 @@
-#### BigQuery-specific ####
-project_id <- 'moz-fx-data-bq-data-science'
-fission_tables <- list(
-  project = 'moz-fx-data-shared-prod',
-  dataset = 'analysis',
-  main = 'fission_monitoring_main_v1',
-  crash = 'fission_monitoring_crash_v1',
-  analyzed = 'fission_monitoring_analyzed_v1'
-)
-
 #### Experiment-specific ####
 
-tbl.main <- 'moz-fx-data-shared-prod.analysis.fission_monitoring_main_v1'
-
-tbl.crashes <- 'moz-fx-data-shared-prod.analysis.fission_monitoring_crash_v1'
-
-tbl.analyzed <- 'moz-fx-data-shared-prod.analysis.fission_monitoring_analyzed_v1'
-
-slug <- 'bug-1622934-pref-webrender-continued-v2-nightly-only-nightly-76-80'
-
-start_date.exp <- as.Date('2020-08-06')
+slug <- 'bug-1660366-pref-ongoing-fission-nightly-experiment-nightly-83-100'
 
 #### Analysis-specific ####
 # Breakdown by how probes are analyzed # 
@@ -78,7 +60,10 @@ probes.crashes <- list(
   'CONTENT_SHUTDOWN_CRASHES' = 'content_shutdown_crashes',
   'GPU_CRASHES' = 'gpu_crashes',
   'PLUGIN_CRASHES' = 'plugin_crashes',
-  'GMPLUGIN_CRASHES' = 'gmplugin_crashes'
+  'GMPLUGIN_CRASHES' = 'gmplugin_crashes',
+  'OOM_CRASHES' = 'oom_crashes',
+  'SHUTDOWN_KILL_CRASHES' = 'shutdown_kill_crashes',
+  'SHUTDOWN_HANGS' = 'shutdown_hangs'
 )
 
 # Bootstrapping

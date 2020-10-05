@@ -78,7 +78,7 @@ library(dplyr)
 
 
 # Arguments
-```{r args}
+```{r args, echo=FALSE}
 print('ETL configuration')
 project_id <- Sys.getenv("BQ_BILLING_PROJECT_ID")
 print(glue('BigQuery Billing project: {project_id}'))
@@ -87,7 +87,7 @@ print(glue('Import - Main table: {tbl.main}'))
 tbl.crashes <- Sys.getenv('BQ_INPUT_CRASH_TABLE')
 print(glue('Import - Crash table: {tbl.crashes}'))
 tbl.analyzed <- Sys.getenv('BQ_OUTPUT_TABLE')
-print(glue('Import - Crash table: {tbl.analyzed}'))
+print(glue('Export - Analyzed table: {tbl.analyzed}'))
 
 is.debug <- case_when(
   Sys.getenv("DEBUG") == 'false' ~ FALSE,
@@ -106,9 +106,10 @@ min_build_id <- case_when(
 )
 print(glue('Processing builds >= {min_build_id}'))
 
+print(glue('Utilizing {bs_replicates} bootstrap relicates'))
 ```
 
-```{r bug_fixes}
+```{r bug_fixes, echo=FALSE}
 options(scipen = 20) # bigrquery bug: https://github.com/r-dbi/bigrquery/issues/395 
 ```
 
@@ -117,12 +118,9 @@ options(scipen = 20) # bigrquery bug: https://github.com/r-dbi/bigrquery/issues/
 
 Perform the histogram aggregation server-side. This is most easy achieved processing a histogram at a time. 
 
-**TODO** There are several methods necessary for handling histograms. This will require a map of probe_name -> hist_agg_method. Defaulting to `summarize.hist` for the moment. 
-
-
 ```{r hist_agg_var}
 results.hist <- list()
-hists.raw <- list()  #TODO: For initial EDA: remove after histograms well-understood
+hists.raw <- list()  
 ```
 
 ```{r hist_agg}
@@ -155,8 +153,6 @@ for (probe in names(probes.hist)) {
   if (is.debug)
     break
 }
-
-# save(hists.raw, results.hist, file='hists_raw.2df')
 ```
 
 
@@ -172,11 +168,11 @@ scalar.df.nrow <- nrow(scalar.df)
 if (is.debug) print(glue('Processing scalar data.frame {scalar.df.nrow}'))
 ```
 
-```{r scalar_agg_var}
-results.scalar <- list()
-```
 
+Calculate means and confidence intervals. 
 ```{r scalar_agg, warning=FALSE}
+results.scalar <- list()
+
 if (is.debug)
   bs_replicates <- 20
 
@@ -205,6 +201,7 @@ for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))) {
 ```
 
 # Crash Aggregation
+Perform a similar analysis for crashes.
 
 ```{r crash_import}
 crashes <-  bq_project_query(project_id, build_crash_query(probes.crashes, slug, tbl.crashes, min_build_id))
@@ -215,23 +212,10 @@ crashes.df.nrow <- nrow(crashes.df)
 if (is.debug) print(glue('Processing crash data.frame {crashes.df.nrow}'))
 ```
 
-```{r}
-# FIXME: remove filter
-crashes.df <- crashes.df %>%
-  filter(build_id != '20200923') %>%
-  mutate(branch = case_when(
-    branch == 'false' ~ 'disabled',
-    TRUE ~ 'enabled'
-  )) %>%
-  as.data.table()
-```
-
-```{r crashes_agg_var}
-results.crashes <- list()
-```
-
-Process the per usage hour probes:
+Process the per usage hour probes. 
 ```{r crashes_agg, warning=FALSE}
+results.crashes <- list()
+
 process_crash <- function(probe) {
   crashes.res <- tryCatch({
     print(probe)
@@ -259,7 +243,7 @@ for (probe in names(probes.crashes)) {
 
 # Export
 
-Combine the individual probes into a single `data.frame`
+Combine the individual probes into a single `data.frame`.
 
 ```{r combine}
 final.df <- rbindlist(results.hist) %>%
@@ -290,7 +274,6 @@ bq_table(project = tbl.analyzed.chunks[1],
     values = final.df,
     create_disposition = "CREATE_IF_NEEDED",
     write_disposition = "WRITE_APPEND",
-    # write_disposition = "WRITE_TRUNCATE",
     fields = as_bq_fields(final.df),
     billing = project_id
   )
@@ -300,16 +283,6 @@ bq_table(project = tbl.analyzed.chunks[1],
 # TODO
 
 * For scalar query, perform dense_rank on client_id to get `id` field
-* Scalar boostrapping should all be done with same replicates. Statistically more sound, and MUCH faster. 
-* dynamically name control/treatment in stats.R
-
-* Missing Analysis Fields
-- Add total number of unique users per branch per build: this is availabe in Grafana.
-- 
-* should "MEMORY_TOTAL" = 'payload.processes.histograms.memory_total' and not content?
-* Purpose of: sum(coalesce(VALUE_SUM(checkerboard_severity,500))) 
-* Handling `device_resets`?
-
-
-# FIXME
-* `FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_PER_LOADED_TABS` is a composition of many histograms. Only using `payload.histograms.fx_number_of_unique_site_origins_per_loaded_tabs_1` for POC. 
+* Scalar bootstrapping should all be done with same replicates. Statistically more sound, and MUCH faster. 
+* Dynamically name control/treatment in stats.R
+* Adding `device_resets` for stability. 
