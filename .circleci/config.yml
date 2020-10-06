@@ -1,5 +1,5 @@
 orbs:
-  gcp-gcr: circleci/gcp-gcr@0.7.1
+  gcp-gcr: circleci/gcp-gcr@0.8.0
 
 version: 2.1
 
