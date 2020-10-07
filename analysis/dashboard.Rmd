@@ -116,7 +116,7 @@ usage.Two lines one for each branch and each point corresponds to a specific bui
 * Blue line: enabled branch
 * Red line: disabled branch 
 
-Hovering over each point reveals a pop-up displaying the build_id, value, error bar, and relative difference.
+Hovering over each point reveals a pop-up displaying the build_id, branch, number of clients used in measurement (`num_clients`), estimate and confidence interval, and relative difference.
 *NOTE*: If a check-mark follows the latter, evidence suggests that branches are different (e.g., regression occurred).
 
 Zoom: Use mouse-wheel, and double-click to reset.
@@ -264,12 +264,10 @@ Code for the 2nd-stage ETL and dashboard can be viewed
 [here](https://github.com/mozilla/fission-monitoring-nightly).
 
 
-(There is one exception, checkerboard severity, where reduce the histogram to an average for a client)
-
 #### Dashboard
 
 The code for this RMarkdown dashboard is available
-[here](https://github.com/mozilla/fission-monitoring-nightly/blob/main/dashboard.Rmd).
+[here](https://github.com/mozilla/fission-monitoring-nightly/blob/main/analysis/dashboard.Rmd).
 
 
 #### Appendix

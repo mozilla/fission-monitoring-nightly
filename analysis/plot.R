@@ -44,6 +44,7 @@ plotFigure <- function(f, title, width = NULL, height = NULL, pointSize = 10, yd
           color = list(field = "Branch", type = "nominal", scale = list(scheme = "set1")),
           tooltip = list(
             list(field = "build_id", type = "nominal"),
+            list(field = 'num_clients', type='nominal'),
             list(field = "Branch", type = "ordinal"),
             list(field = "Estimate", type = "ordinal"),
             list(field = "UsingDataTill", type = "temporal"),
@@ -94,6 +95,7 @@ create.figure <- function(df, title, width = NULL, height = NULL, yaxislab = "Es
   ]
   xx <- w[, list(
     UsingDataTill = date_computed, build_id = parse_date(build_id),
+    num_clients = nreporting,
     Branch = branch,
     est, low, high, RelativeDiff
   )]
