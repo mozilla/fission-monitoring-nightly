@@ -1,6 +1,7 @@
 #### Experiment-specific ####
 
 slug <- 'bug-1660366-pref-ongoing-fission-nightly-experiment-nightly-83-100'
+exp_min_build_id <- 20201012
 
 #### Analysis-specific ####
 # Breakdown by how probes are analyzed # 

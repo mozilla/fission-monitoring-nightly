@@ -97,13 +97,14 @@ is.debug <- case_when(
 print(glue('Debugging ETL pipeline: {is.debug}'))
 
 # Minimum build ID to process. Apply this as a query filter to retrieve only new, unprocessed, builds. 
-min_build_id <- case_when(
-  Sys.getenv("MIN_BUILD_ID") == '' ~ bq_project_query(project_id, build_min_build_id_query(tbl.main, num_build_dates)) %>%
+if (Sys.getenv("MIN_BUILD_ID") == ''){
+  min_build_id <- bq_project_query(project_id, build_min_build_id_query(tbl.main, num_build_dates)) %>%
     bq_table_download() %>%
     pull(max_build_date) %>% 
-    format('%Y%m%d'),
-  TRUE ~ Sys.getenv("MIN_BUILD_ID") 
-)
+    format('%Y%m%d')
+  if (as.integer(min_build_id) < exp_min_build_id) min_build_id <- exp_min_build_id
+} else Sys.getenv("MIN_BUILD_ID") 
+
 print(glue('Processing builds >= {min_build_id}'))
 
 print(glue('Utilizing {bs_replicates} bootstrap relicates'))
@@ -132,7 +133,20 @@ process_histograms <- function(probe) {
       build_hist_query(probes.hist[[probe]], slug, tbl.main, min_build_id)
      hist <- bq_project_query(project_id, hist_query)
      hist.df <- bq_table_download(hist) %>%
+       mutate(branch = case_when(
+        branch == 'fission-enabled' ~ 'enabled',
+         TRUE ~ 'disabled'
+       )) %>%
        as.data.table()
+     
+     #FIXME: filter out keys not corresponding to enough data
+     key_count <- hist.df %>% count(build_id, key)
+     if (nrow(key_count) > 0) {
+       print(glue('WARNING: filter {nkeys} number of keys from histogram due to lacking branch', nkeys=nrow(key_count)))
+        hist.df <- hist.df %>% left_join(key_count) %>%
+          filter(n > 1) %>%
+          as.data.table()
+     }
     
      hist.summary <- summarize.hist(hist.df) %>%
        mutate(probe = probe) %>%
@@ -162,6 +176,10 @@ Pull the each's build per daily average of the scalars.
 ```{r scalar_import}
 scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, slug, tbl.main, min_build_id))
 scalar.df <- bq_table_download(scalar) %>%
+     mutate(branch = case_when(
+        branch == 'fission-enabled' ~ 'enabled',
+         TRUE ~ 'disabled'
+       )) %>%
   as.data.table()
 
 scalar.df.nrow <- nrow(scalar.df)
