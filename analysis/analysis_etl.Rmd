@@ -105,14 +105,6 @@ if (Sys.getenv("MIN_BUILD_ID") == ''){
   if (as.integer(min_build_id) < exp_min_build_id) min_build_id <- exp_min_build_id
 } else Sys.getenv("MIN_BUILD_ID") 
 
-# min_build_id <- case_when(
-#   Sys.getenv("MIN_BUILD_ID") == '' ~ bq_project_query(project_id, build_min_build_id_query(tbl.main, num_build_dates)) %>%
-#     bq_table_download() %>%
-#     pull(max_build_date) %>% 
-#     format('%Y%m%d'),
-#   TRUE ~ Sys.getenv("MIN_BUILD_ID") 
-# )
-
 print(glue('Processing builds >= {min_build_id}'))
 
 print(glue('Utilizing {bs_replicates} bootstrap relicates'))
@@ -152,7 +144,8 @@ process_histograms <- function(probe) {
      if (nrow(key_count) > 0) {
        print(glue('WARNING: filter {nkeys} number of keys from histogram due to lacking branch', nkeys=nrow(key_count)))
         hist.df <- hist.df %>% left_join(key_count) %>%
-          filter(n > 1)
+          filter(n > 1) %>%
+          as.data.table()
      }
     
      hist.summary <- summarize.hist(hist.df) %>%
