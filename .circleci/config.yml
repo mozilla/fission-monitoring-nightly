@@ -19,7 +19,7 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
-      - run: docker build .
+      - run: docker build -t fission-monitoring .
 
   deploy:
     docker:
@@ -31,7 +31,7 @@ jobs:
       - run:
           name: Build container
           command: |
-            docker build .
+            docker build -t fission-monitoring .
       - run:
           name: Configure gcloud
           command: |
@@ -43,7 +43,7 @@ jobs:
           name: Deploy to GCR
           command: |
             DOCKER_IMAGE="gcr.io/${GOOGLE_PROJECT_ID}/fission-monitoring"
-            docker tag "${DOCKER_IMAGE}:latest"
+            docker tag fission-monitoring "${DOCKER_IMAGE}:latest"
             docker push "${DOCKER_IMAGE}:latest"
 
 
