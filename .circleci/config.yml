@@ -21,7 +21,7 @@ jobs:
       - setup_remote_docker
       - run: docker build -t fission-monitoring .
 
-  deploy:
+  deploy-docker-container:
     docker:
       - image: google/cloud-sdk
     working_directory: ~/mozilla/fission_monitoring_nightly
@@ -49,13 +49,13 @@ jobs:
 
 workflows:
   version: 2
-  deploy-docker-container:
+  build-or-deploy:
     jobs:
       - build:
           filters:
             branches:
               ignore: master
-      - deploy:
+      - deploy-docker-container:
           filters:
             branches:
               only: master
