@@ -51,8 +51,11 @@ workflows:
   version: 2
   deploy-docker-container:
     jobs:
-      - build
+      - build:
+          filters:
+            branches:
+              ignore: master
       - deploy:
           filters:
             branches:
-              only: circle_docker_fix
+              only: master
