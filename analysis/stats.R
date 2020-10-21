@@ -91,13 +91,53 @@ summarize.hist <- function (histo, REP = 500, sm = list(t= mean,i=function(s) s)
   
 }
 
-# summarize.scalar <- function(df, probe){
-#   scalar.df[
-#     (probe)<quantile((probe),0.999), 
-#     summarize.scalar.bts(.SD[,list(id,branch,x=(probe))], "x", bs_replicates,stat=mean),
-#     by=build_id][, label := probe][order(build_id,what),]
-#   
-# }
+summarize.hist.perc <- function(histo, perc, REP = 5000) {
+  br <- histo[,
+              {
+                D <- dirch(psum, REP)
+                mean_estimates <- as.numeric(apply(D, 1, function(k) {
+                  quantile(sample(key, 10000, prob = k, replace = TRUE), perc)
+                }))
+                stats <- c(
+                  avg = mean(mean_estimates),
+                  lower = as.numeric(quantile(mean_estimates, 0.05 / 2)),
+                  upper = as.numeric(quantile(mean_estimates, 1 - 0.05 / 2))
+                )
+                data.table(
+                  nreporting = nreporting[1],
+                  low = stats[["lower"]], est = stats[["avg"]], high = stats[["upper"]]
+                )
+              },
+              by = list(build_id = build_id, what = branch)
+  ][order(build_id, what), ]
+  
+  rel <- histo[,
+               {
+                 dis <- .SD[branch == "disabled", ]
+                 ena <- .SD[branch == "enabled", ]
+                 Ddis <- dirch(dis$psum, REP)
+                 Dena <- dirch(ena$psum, REP)
+                 dis_mean_estimates <- as.numeric(apply(Ddis, 1, function(k) {
+                   quantile(sample(dis$key, 10000, prob = k, replace = TRUE), perc)
+                 }))
+                 ena_mean_estimates <- as.numeric(apply(Dena, 1, function(k) {
+                   quantile(sample(ena$key, 10000, prob = k, replace = TRUE), perc)
+                 }))
+                 mean_estimates <- (ena_mean_estimates - dis_mean_estimates) / dis_mean_estimates * 100
+                 stats <- c(
+                   avg = mean(mean_estimates, na.rm = TRUE),
+                   lower = as.numeric(quantile(mean_estimates, 0.05 / 2, na.rm = TRUE)),
+                   upper = as.numeric(quantile(mean_estimates, 1 - 0.05 / 2, na.rm = TRUE))
+                 )
+                 data.table(
+                   what = "reldiff(TvsC) %", nreporting = nreporting[1],
+                   low = stats[["lower"]], est = stats[["avg"]], high = stats[["upper"]]
+                 )
+               },
+               by = list(build_id = build_id)
+  ][order(build_id, what), ]
+  rbind(br, rel)[order(build_id, what), ]
+}
 
 summarize.scalar <- function(d, var, R = 500, fac = 1, stat = median) {
   CC <- 1 / 3600

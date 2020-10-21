@@ -137,7 +137,7 @@ Information for builds up to `r as.Date(as.character(max_build_id), format = '%Y
 ```{r eval=TRUE}
 # query histogram datasets
 hists <- list()
-for (probe in c(names(probes.hist), 'GFX_OMTP_PAINT_WAIT_TIME_RATIO')){
+for (probe in c(names(probes.hist), 'GFX_OMTP_PAINT_WAIT_TIME_RATIO', names(probes.hist.perc.95))){
   hists[[probe]] <- bq_project_query(project_id, build_analyzed_probe_query(tbl.analyzed, probe = probe)) %>%
     bq_table_download() %>%
     as.data.table()
