@@ -38,6 +38,10 @@ probes.hist <- list(
   'FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_ALL_TABS' = 'payload.histograms.fx_number_of_unique_site_origins_all_tabs'
 )
 
+probes.hist.perc.95 <- list(
+  "MEMORY_TOTAL_95TH" = 'payload.histograms.memory_total'
+)
+
 probes.scalar.sum <- list(
   'ACTIVE_TICKS' = 'payload.processes.parent.scalars.browser_engagement_active_ticks',
   'SUBSESSION_LENGTH' = 'payload.info.subsession_length',

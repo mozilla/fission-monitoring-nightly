@@ -139,15 +139,6 @@ process_histograms <- function(probe) {
        )) %>%
        as.data.table()
      
-     #FIXME: filter out keys not corresponding to enough data
-     key_count <- hist.df %>% count(build_id, key)
-     if (nrow(key_count) > 0) {
-       print(glue('WARNING: filter {nkeys} number of keys from histogram due to lacking branch', nkeys=nrow(key_count)))
-        hist.df <- hist.df %>% left_join(key_count) %>%
-          filter(n > 1) %>%
-          as.data.table()
-     }
-    
      hist.summary <- summarize.hist(hist.df) %>%
        mutate(probe = probe) %>%
        rename(branch = what)
@@ -162,6 +153,43 @@ process_histograms <- function(probe) {
 
 for (probe in names(probes.hist)) {
   hist.res <- process_histograms(probe)
+  results.hist[[probe]] <- hist.res$summary
+  hists.raw[[probe]] <- hist.res$raw
+  if (is.debug)
+    break
+}
+```
+
+```{r hist_agg_95th}
+print('Processing histograms: 95th percentile')
+
+process_histograms_95th <- function(probe) {
+  hist.res <- tryCatch({
+    print(probe)
+    hist_query <-
+      build_hist_query(probes.hist.perc.95[[probe]], slug, tbl.main, min_build_id)
+     hist <- bq_project_query(project_id, hist_query)
+     hist.df <- bq_table_download(hist) %>%
+       mutate(branch = case_when(
+        branch == 'fission-enabled' ~ 'enabled',
+         TRUE ~ 'disabled'
+       )) %>%
+       as.data.table()
+    
+     hist.summary.95th <- summarize.hist.perc(hist.df, 0.95) %>%
+       mutate(probe = probe) %>%
+       rename(branch = what)
+     list(raw = hist.df, summary = hist.summary.95th)
+   },
+  error = function(err) {
+     print(glue("ERROR processsing {probe}: {err}"))
+     return(c(raw = NULL, summary = NULL))
+   })
+  return(hist.res) 
+}
+
+for (probe in names(probes.hist.perc.95)) {
+  hist.res <- process_histograms_95th(probe)
   results.hist[[probe]] <- hist.res$summary
   hists.raw[[probe]] <- hist.res$raw
   if (is.debug)
@@ -203,7 +231,6 @@ process_scalar <- function(probe) {
       rename(branch = what)
   },
   error = function(err) {
-    # error handler picks up where error was generated
     print(glue("ERROR processsing {probe}: {err}"))
     return(NULL)
   })
@@ -237,14 +264,14 @@ results.crashes <- list()
 process_crash <- function(probe) {
   crashes.res <- tryCatch({
     print(probe)
-      crashes.df[get(probe_per_hour) < quantile(get(probe_per_hour), perc.high, na.rm = TRUE),
+    crashes.df[get(probe_per_hour) < quantile(get(probe_per_hour), perc.high, na.rm = TRUE),
+    #crashes.df[,
                  summarize.scalar(.SD[, list(id, branch, x =
                                                get(probe_per_hour))], "x", bs_replicates, stat = mean.narm),
                  by = build_id][, probe := probe_per_hour][order(build_id, what), ] %>%
       rename(branch = what)
   },
   error = function(err) {
-    # error handler picks up where error was generated
     print(glue("ERROR processsing {probe}: {err}"))
     return(NULL)
   })
@@ -275,7 +302,7 @@ final.nrow <- nrow(final.df)
 Remove records corresponding to the newest builds
 
 ```{r delete_processed_builds}
-bq_project_query(project_id, build_delete_build_records_query(tbl.analyzed, min_build_id ))
+try(bq_project_query(project_id, build_delete_build_records_query(tbl.analyzed, min_build_id )))
 ```
 
 Export finalized dataset to BigQuery for display in dashboard

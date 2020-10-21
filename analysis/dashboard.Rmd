@@ -132,7 +132,7 @@ Information for builds up to `r as.Date(as.character(max_build_id), format = '%Y
 
 ##  {.tabset}
 
-### Performance
+### Performance: Mean
 
 ```{r eval=TRUE}
 # query histogram datasets
@@ -160,6 +160,38 @@ vw(list(
     vconcat=performance_plots
         ) ,TRUE)
 ```
+
+
+
+### Performance: 95th
+
+```{r eval=TRUE}
+# query histogram datasets
+hists <- list()
+for (probe in names(probes.hist.perc.95)){
+  hists[[probe]] <- bq_project_query(project_id, build_analyzed_probe_query(tbl.analyzed, probe = probe)) %>%
+    bq_table_download() %>%
+    as.data.table()
+}
+
+perf_95th_plots <- list()
+
+for (probe in names(hists)){
+  df <- hists[[probe]]
+  if (nrow(df) > 0) {
+    # print(probe)
+    perf_95th_plots[[length(perf_95th_plots) + 1]] <- create.figure(df, title=probe,
+                    yaxislab='Estimate',width=W/1.85,height=H,
+                    LA=90)
+  }
+}
+
+vw(list(
+    config = list( legend = list(direction='horizontal',orient='top',title=NULL)),
+    vconcat=perf_95th_plots
+        ) ,TRUE)
+```
+
 
 
 ### Stability
