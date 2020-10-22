@@ -1,7 +1,6 @@
 ---
 title: "Fission Monitoring Nightly: Analysis ETL"
-author: "Corey Dow-Hygelund, Mozilla Data Science"
-date: "`r Sys.Date()`"
+author: "Managed by Data Science,`r sprintf(' rendered at %s PST',Sys.time())`"
 output:
   html_document:
     mathjax: null

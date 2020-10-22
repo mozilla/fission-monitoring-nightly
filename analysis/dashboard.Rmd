@@ -1,6 +1,6 @@
 ---
 title: "Fission Nightly Monitoring"
-author: "Managed by Data Science,`r sprintf(' rendered at %s PST',Sys.time())`"
+author: "Managed by Mozilla Data Science,`r sprintf(' rendered at %s PST',Sys.time())`"
 output:
   html_document:
     toc: false
