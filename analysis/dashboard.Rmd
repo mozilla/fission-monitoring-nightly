@@ -241,7 +241,7 @@ vw(list(config = list(
 vconcat = crash_plots) , TRUE)
 ```
 
-#### Crash Rates: Per Hour
+#### Crash Rates: Unique Client Count
 
 
 ```{r eval=TRUE}
