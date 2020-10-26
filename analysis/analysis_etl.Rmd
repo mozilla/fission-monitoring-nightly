@@ -102,7 +102,7 @@ if (Sys.getenv("MIN_BUILD_ID") == ''){
     pull(max_build_date) %>% 
     format('%Y%m%d')
   if (as.integer(min_build_id) < exp_min_build_id) min_build_id <- exp_min_build_id
-} else Sys.getenv("MIN_BUILD_ID") 
+} else min_build_id <- Sys.getenv("MIN_BUILD_ID") 
 
 print(glue('Processing builds >= {min_build_id}'))
 
@@ -260,15 +260,16 @@ Process the per usage hour probes.
 ```{r crashes_agg, warning=FALSE}
 results.crashes <- list()
 
-process_crash <- function(probe) {
+process_crash <- function(probe, stat=mean.narm, name = probe) {
   crashes.res <- tryCatch({
     print(probe)
-    crashes.df[get(probe_per_hour) < quantile(get(probe_per_hour), perc.high, na.rm = TRUE),
-    #crashes.df[,
-                 summarize.scalar(.SD[, list(id, branch, x =
-                                               get(probe_per_hour))], "x", bs_replicates, stat = mean.narm),
-                 by = build_id][, probe := probe_per_hour][order(build_id, what), ] %>%
-      rename(branch = what)
+    crashes.df[get(probe) < quantile(get(probe), perc.high, na.rm = TRUE),
+               summarize.scalar(.SD[, list(id, branch, x =
+                                               get(probe))], "x",
+                                  bs_replicates, stat = stat),
+               by = build_id][, probe := probe][order(build_id, what), ] %>%
+      rename(branch = what) %>%
+      mutate(probe = name)
   },
   error = function(err) {
     print(glue("ERROR processsing {probe}: {err}"))
@@ -280,6 +281,19 @@ process_crash <- function(probe) {
 for (probe in names(probes.crashes)) {
   probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
   results.crashes[[probe_per_hour]] <- process_crash(probe_per_hour)
+  if (is.debug)
+    break
+}
+```
+
+Process the distinct client crashing. 
+```{r crashes_count_agg, warning=FALSE}
+client_count.stat <- function(x) length(which(!is.na(x) & x>0))
+for (probe in names(probes.crashes)) {
+  probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
+  results.crashes[[probe_client_count]] <- process_crash(probe, 
+                                                     stat = client_count.stat,
+                                                     name = probe_client_count)
   if (is.debug)
     break
 }
@@ -323,6 +337,15 @@ bq_table(project = tbl.analyzed.chunks[1],
   )
 ```
 
+# Cleanup 
+
+Remove all objects from memory to not blow up anything (e.g. dashboard processing) downstream.
+
+```{r gc}
+rm(list=ls())
+gc()
+gc()
+```
 
 # TODO
 
