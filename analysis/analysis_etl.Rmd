@@ -315,7 +315,7 @@ final.nrow <- nrow(final.df)
 Remove records corresponding to the newest builds
 
 ```{r delete_processed_builds}
-try(bq_project_query(project_id, build_delete_build_records_query(tbl.analyzed, min_build_id )))
+bq_project_query(project_id, build_delete_build_records_query(tbl.analyzed, min_build_id ))
 ```
 
 Export finalized dataset to BigQuery for display in dashboard
