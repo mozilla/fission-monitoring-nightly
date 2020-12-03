@@ -19,7 +19,7 @@ WITH a AS (
     dense_rank() OVER ( ORDER BY client_id) AS c_id,
     substr(application.build_id,1,8) AS buildid,
     `moz-fx-data-shared-prod`.udf.get_key(environment.experiments,'{slug}').branch AS branch,
-    `moz-fx-data-shared-prod`.udf.json_extract_int_map(JSON_EXTRACT({probe_hist}, '$.values')) AS x
+    mozfun.hist.extract({probe_hist}).values AS x
   FROM {tbl}
   WHERE `moz-fx-data-shared-prod`.udf.get_key(environment.experiments,'{slug}').branch IS NOT NULL
   ),
@@ -42,7 +42,7 @@ WITH a AS (
     dense_rank() OVER ( ORDER BY client_id) AS c_id,
     cast(substr(application.build_id,1,8) as int64) AS build_id,
     `moz-fx-data-shared-prod`.udf.get_key(environment.experiments,'{slug}').branch AS branch,
-    `moz-fx-data-shared-prod`.udf.json_extract_int_map(JSON_EXTRACT({probe_hist}, '$.values')) AS x
+    mozfun.hist.extract({probe_hist}).values AS x
   FROM {tbl}
   WHERE `moz-fx-data-shared-prod`.udf.get_key(environment.experiments,'{slug}').branch IS NOT NULL
   ),
@@ -146,7 +146,7 @@ ORDER BY build_id, branch
 #### Query Helpers ####
 build_main_query <- function(probes.hist, slug, tbl){ ##TODO: Add in scalar probes
   query_hist = dplyr::case_when(
-    !is.null(probes.hist) ~ paste('  ', 'JSON_EXTRACT(', unlist(probes.hist), ", '$.values')", ' AS ', names(probes.hist), sep = '', collapse = ',\n'),
+    !is.null(probes.hist) ~ paste('  ', 'mozfun.hist.extract(', unlist(probes.hist), ").values", ' AS ', names(probes.hist), sep = '', collapse = ',\n'),
     TRUE ~ ''
   )
   main_query = glue(main_query_base,
