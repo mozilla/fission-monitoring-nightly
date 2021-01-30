@@ -66,6 +66,7 @@ margin-top: 100px;
 source('params.R')
 source('query.R')
 source('stats.R')
+source('process.R')
 ```
 
 
@@ -119,86 +120,41 @@ options(scipen = 20) # bigrquery bug: https://github.com/r-dbi/bigrquery/issues/
 Perform the histogram aggregation server-side. This is most easy achieved processing a histogram at a time. 
 
 ```{r hist_agg_var}
-results.hist <- list()
-hists.raw <- list()  
+results.hist <- results.hist.win <- results.hist.osx <- results.hist.linux <- list()
+# hists.raw <- list()  
 ```
 
 ```{r hist_agg}
 print('Processing histograms')
-process_histograms <- function(probe) {
-  hist.res <- tryCatch({
-    print(probe)
-    hist_query <-
-      build_hist_query(probes.hist[[probe]], slug, tbl.main, min_build_id)
-     hist <- bq_project_query(project_id, hist_query)
-     hist.df <- bq_table_download(hist) %>%
-       mutate(branch = case_when(
-        branch == 'fission-enabled' ~ 'enabled',
-         TRUE ~ 'disabled'
-       )) %>%
-       as.data.table()
-     
-     hist.summary <- summarize.hist(hist.df) %>%
-       mutate(probe = probe) %>%
-       rename(branch = what)
-     list(raw = hist.df, summary = hist.summary)
-   },
-  error = function(err) {
-     print(glue("ERROR processsing {probe}: {err}"))
-     return(c(raw = NULL, summary = NULL))
-   })
-  return(hist.res) 
-}
 
 for (probe in names(probes.hist)) {
-  hist.res <- process_histograms(probe)
-  results.hist[[probe]] <- hist.res$summary
-  hists.raw[[probe]] <- hist.res$raw
+  results.hist[[probe]] <- process_histograms(probe)$summary
+  results.hist.win[[probe]] <- process_histograms(probe, os='Windows')$summary
+  results.hist.osx[[probe]] <- process_histograms(probe, os='Mac')$summary
+  results.hist.linux[[probe]] <- process_histograms(probe, os='Linux')$summary
   if (is.debug)
-    break
+     break
 }
 ```
+
 
 ```{r hist_agg_95th}
 print('Processing histograms: 95th percentile')
 
-process_histograms_95th <- function(probe) {
-  hist.res <- tryCatch({
-    print(probe)
-    hist_query <-
-      build_hist_query(probes.hist.perc.95[[probe]], slug, tbl.main, min_build_id)
-     hist <- bq_project_query(project_id, hist_query)
-     hist.df <- bq_table_download(hist) %>%
-       mutate(branch = case_when(
-        branch == 'fission-enabled' ~ 'enabled',
-         TRUE ~ 'disabled'
-       )) %>%
-       as.data.table()
-    
-     hist.summary.95th <- summarize.hist.perc(hist.df, 0.95) %>%
-       mutate(probe = probe) %>%
-       rename(branch = what)
-     list(raw = hist.df, summary = hist.summary.95th)
-   },
-  error = function(err) {
-     print(glue("ERROR processsing {probe}: {err}"))
-     return(c(raw = NULL, summary = NULL))
-   })
-  return(hist.res) 
-}
-
 for (probe in names(probes.hist.perc.95)) {
-  hist.res <- process_histograms_95th(probe)
-  results.hist[[probe]] <- hist.res$summary
-  hists.raw[[probe]] <- hist.res$raw
+  results.hist[[probe]] <- process_histograms_95th(probe)$summary
+  results.hist[[probe]] <- process_histograms_95th(probe, os='Windows')$summary
+  results.hist[[probe]] <- process_histograms_95th(probe, os='Mac')$summary
+  results.hist[[probe]] <- process_histograms_95th(probe, os='Linux')$summary
   if (is.debug)
     break
 }
 ```
 
 
-# Scalar Aggregation
+# Scalar Aggregation{.tabset}
 
+## OS: ALL
 Pull the each's build per daily average of the scalars. 
 ```{r scalar_import}
 scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, slug, tbl.main, min_build_id))
@@ -221,28 +177,113 @@ results.scalar <- list()
 if (is.debug)
   bs_replicates <- 20
 
-process_scalar <- function(probe) {
-  scalar.res <- tryCatch({
-      scalar.df[get(probe) < quantile(get(probe), perc.high, na.rm = TRUE),
-                summarize.scalar(.SD[, list(id, branch, x =
-                                              get(probe))], "x", bs_replicates, stat = mean.narm),
-                by = build_id][, probe := probe][order(build_id, what),] %>%
-      rename(branch = what)
-  },
-  error = function(err) {
-    print(glue("ERROR processsing {probe}: {err}"))
-    return(NULL)
-  })
-  return(scalar.res)
-}
-
 for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))) {
   print(probe)
-  results.scalar[[probe]] <- process_scalar(probe)
+  results.scalar[[probe]] <- process_scalar(scalar.df, probe, perc.high, bs_replicates)
   if (is.debug)
     break
 }
 ```
+
+
+## OS: Windows
+Pull the each's build per daily average of the scalars. 
+```{r scalar_import_win}
+scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, slug, tbl.main, min_build_id, os='Windows'))
+scalar.df <- bq_table_download(scalar) %>%
+     mutate(branch = case_when(
+        branch == 'fission-enabled' ~ 'enabled',
+         TRUE ~ 'disabled'
+       )) %>%
+  as.data.table()
+
+scalar.df.nrow <- nrow(scalar.df)
+if (is.debug) print(glue('Processing scalar data.frame {scalar.df.nrow}'))
+```
+
+
+Calculate means and confidence intervals. 
+```{r scalar_agg_win, warning=FALSE}
+results.scalar.win <- list()
+
+if (is.debug)
+  bs_replicates <- 20
+
+for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))) {
+  print(probe)
+  results.scalar.win[[probe]] <- process_scalar(scalar.df, probe, perc.high, bs_replicates)
+  if (is.debug)
+    break
+}
+```
+
+
+
+## OS: Mac
+Pull the each's build per daily average of the scalars. 
+```{r scalar_import_osx}
+scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, slug, tbl.main, min_build_id, os='Mac'))
+scalar.df <- bq_table_download(scalar) %>%
+     mutate(branch = case_when(
+        branch == 'fission-enabled' ~ 'enabled',
+         TRUE ~ 'disabled'
+       )) %>%
+  as.data.table()
+
+scalar.df.nrow <- nrow(scalar.df)
+if (is.debug) print(glue('Processing scalar data.frame {scalar.df.nrow}'))
+```
+
+
+Calculate means and confidence intervals. 
+```{r scalar_agg_osx, warning=FALSE}
+results.scalar.osx <- list()
+
+if (is.debug)
+  bs_replicates <- 20
+
+for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))) {
+  print(probe)
+  results.scalar.osx[[probe]] <- process_scalar(scalar.df, probe, perc.high, bs_replicates)
+  if (is.debug)
+    break
+}
+```
+
+
+
+## OS: Linux
+Pull the each's build per daily average of the scalars. 
+```{r scalar_import_linux}
+scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, slug, tbl.main, min_build_id, os='Linux'))
+scalar.df <- bq_table_download(scalar) %>%
+     mutate(branch = case_when(
+        branch == 'fission-enabled' ~ 'enabled',
+         TRUE ~ 'disabled'
+       )) %>%
+  as.data.table()
+
+scalar.df.nrow <- nrow(scalar.df)
+if (is.debug) print(glue('Processing scalar data.frame {scalar.df.nrow}'))
+```
+
+
+Calculate means and confidence intervals. 
+```{r scalar_agg_linux, warning=FALSE}
+results.scalar.linux <- list()
+
+if (is.debug)
+  bs_replicates <- 20
+
+for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))) {
+  print(probe)
+  results.scalar.linux[[probe]] <- process_scalar(scalar.df, probe, perc.high, bs_replicates)
+  if (is.debug)
+    break
+}
+```
+
+
 
 # Crash Aggregation
 Perform a similar analysis for crashes.
@@ -260,27 +301,9 @@ Process the per usage hour probes.
 ```{r crashes_agg, warning=FALSE}
 results.crashes <- list()
 
-process_crash <- function(probe, stat=mean.narm, name = probe) {
-  crashes.res <- tryCatch({
-    print(probe)
-    crashes.df[get(probe) < quantile(get(probe), perc.high, na.rm = TRUE),
-               summarize.scalar(.SD[, list(id, branch, x =
-                                               get(probe))], "x",
-                                  bs_replicates, stat = stat),
-               by = build_id][, probe := probe][order(build_id, what), ] %>%
-      rename(branch = what) %>%
-      mutate(probe = name)
-  },
-  error = function(err) {
-    print(glue("ERROR processsing {probe}: {err}"))
-    return(NULL)
-  })
-  return(crashes.res)
-}
-
 for (probe in names(probes.crashes)) {
   probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
-  results.crashes[[probe_per_hour]] <- process_crash(probe_per_hour)
+  results.crashes[[probe_per_hour]] <- process_crash(probe_per_hour, perc.high, bs_replicates)
   if (is.debug)
     break
 }
@@ -292,6 +315,8 @@ client_count.stat <- function(x) length(which(!is.na(x) & x>0))
 for (probe in names(probes.crashes)) {
   probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
   results.crashes[[probe_client_count]] <- process_crash(probe, 
+                                                         perc.high,
+                                                         bs_replicates,
                                                      stat = client_count.stat,
                                                      name = probe_client_count)
   if (is.debug)
@@ -305,8 +330,18 @@ Combine the individual probes into a single `data.frame`.
 
 ```{r combine}
 final.df <- rbindlist(results.hist) %>%
-  rbind(., rbindlist(results.scalar)) %>%
-  rbind(., rbindlist(results.crashes)) %>%
+  mutate(os = 'All') %>%
+  rbind(., rbindlist(results.hist.win) %>% mutate(os = 'Windows')) %>%
+  rbind(., rbindlist(results.hist.osx) %>% mutate(os = 'Mac')) %>%
+  rbind(., rbindlist(results.hist.linux) %>% mutate(os = 'Linux')) %>%
+  rbind(., rbindlist(results.scalar) %>% mutate(os = 'All')) %>%
+  rbind(., rbindlist(results.scalar.win) %>% mutate(os = 'Windows')) %>%
+  rbind(., rbindlist(results.scalar.osx) %>% mutate(os = 'Mac')) %>%
+  rbind(., rbindlist(results.scalar.linux) %>% mutate(os = 'Linux')) %>%
+  rbind(., rbindlist(results.crashes) %>% mutate(os = 'All')) %>%
+  # rbind(., rbindlist(results.crashes.win) %>% mutate(os = 'Windows')) %>%
+  # rbind(., rbindlist(results.crashes.osx) %>% mutate(os = 'Mac')) %>%
+  # rbind(., rbindlist(results.crashes.linux) %>% mutate(os = 'Linux')) %>%
   mutate(date_computed = Sys.Date())
 
 final.nrow <- nrow(final.df)

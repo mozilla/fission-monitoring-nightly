@@ -134,13 +134,43 @@ Information for builds up to `r as.Date(as.character(max_build_id), format = '%Y
 
 ### Performance{.tabset}
 
-#### Mean
+#### Mean{.tabset}
 
-```{r eval=TRUE}
+##### OS: All
+
+```{r performance, eval=TRUE}
 # query histogram datasets
 hists <- list()
 for (probe in c(names(probes.hist), 'GFX_OMTP_PAINT_WAIT_TIME_RATIO')){
   hists[[probe]] <- bq_project_query(project_id, build_analyzed_probe_query(tbl.analyzed, probe = probe)) %>%
+    bq_table_download() %>%
+    as.data.table()
+}
+
+performance_plots <- list()
+
+for (probe in names(hists)){
+  df <- hists[[probe]]
+  if (nrow(df) > 0) {
+    print(probe)
+    performance_plots[[length(performance_plots) + 1]] <- create.figure(df, title=probe,
+                    yaxislab='Estimate',width=W/1.85,height=H,
+                    LA=90)
+  }
+}
+
+vw(list(
+    config = list( legend = list(direction='horizontal',orient='top',title=NULL)),
+    vconcat=performance_plots
+        ) ,TRUE)
+```
+
+##### Windows
+```{r performance_windows, eval=TRUE}
+# query histogram datasets
+hists <- list()
+for (probe in c(names(probes.hist), 'GFX_OMTP_PAINT_WAIT_TIME_RATIO')){
+  hists[[probe]] <- bq_project_query(project_id, build_analyzed_probe_query(tbl.analyzed, probe = probe, os='Windows')) %>%
     bq_table_download() %>%
     as.data.table()
 }
@@ -163,7 +193,63 @@ vw(list(
         ) ,TRUE)
 ```
 
+##### MAC
 
+```{r performance_osx, eval=TRUE}
+# query histogram datasets
+hists <- list()
+for (probe in c(names(probes.hist), 'GFX_OMTP_PAINT_WAIT_TIME_RATIO')){
+  hists[[probe]] <- bq_project_query(project_id, build_analyzed_probe_query(tbl.analyzed, probe = probe, os='Mac')) %>%
+    bq_table_download() %>%
+    as.data.table()
+}
+
+performance_plots <- list()
+
+for (probe in names(hists)){
+  df <- hists[[probe]]
+  if (nrow(df) > 0) {
+    # print(probe)
+    performance_plots[[length(performance_plots) + 1]] <- create.figure(df, title=probe,
+                    yaxislab='Estimate',width=W/1.85,height=H,
+                    LA=90)
+  }
+}
+
+vw(list(
+    config = list( legend = list(direction='horizontal',orient='top',title=NULL)),
+    vconcat=performance_plots
+        ) ,TRUE)
+```
+
+##### Linux
+
+```{r performance_linux, eval=TRUE}
+# query histogram datasets
+hists <- list()
+for (probe in c(names(probes.hist), 'GFX_OMTP_PAINT_WAIT_TIME_RATIO')){
+  hists[[probe]] <- bq_project_query(project_id, build_analyzed_probe_query(tbl.analyzed, probe = probe, os='Linux')) %>%
+    bq_table_download() %>%
+    as.data.table()
+}
+
+performance_plots <- list()
+
+for (probe in names(hists)){
+  df <- hists[[probe]]
+  if (nrow(df) > 0) {
+    # print(probe)
+    performance_plots[[length(performance_plots) + 1]] <- create.figure(df, title=probe,
+                    yaxislab='Estimate',width=W/1.85,height=H,
+                    LA=90)
+  }
+}
+
+vw(list(
+    config = list( legend = list(direction='horizontal',orient='top',title=NULL)),
+    vconcat=performance_plots
+        ) ,TRUE)
+```
 
 #### 95th Percentile
 

@@ -45,6 +45,7 @@ WITH a AS (
     mozfun.hist.extract({probe_hist}).values AS x
   FROM {tbl}
   WHERE `moz-fx-data-shared-prod`.udf.get_key(environment.experiments,'{slug}').branch IS NOT NULL
+{additional_filters}
   ),
 b0 AS (
   SELECT c_id, build_id, branch, key, sum(coalesce(value,0)) AS value
@@ -110,6 +111,7 @@ WITH daily_agg as (
   FROM {tbl}
   WHERE
     `moz-fx-data-shared-prod`.udf.get_key(environment.experiments,'{slug}').branch IS NOT NULL
+  {additional_filters}
   GROUP BY 1, 2, 3, 4
 )
 SELECT 
@@ -140,6 +142,7 @@ analyzed_probe_query_base <- "
 SELECT * 
 FROM {tbl} 
 WHERE probe='{probe}'
+{additional_filters}
 ORDER BY build_id, branch
 "
 
@@ -157,11 +160,16 @@ build_main_query <- function(probes.hist, slug, tbl){ ##TODO: Add in scalar prob
   return(main_query)
 }
 
-build_hist_query <- function(probe.hist, slug, tbl, min_build_id, hist_query_base. = hist_query_base){
+build_hist_query <- function(probe.hist, slug, tbl, min_build_id,  os, hist_query_base. = hist_query_base){
+  additional_filters <- dplyr::case_when(
+    !is.null(os) ~ paste("AND normalized_os = '", os,"'", sep='') ,
+    TRUE ~ '')
   return(glue(hist_query_base., 
               probe_hist = probe.hist,
               tbl = tbl,
-              min_build_id = min_build_id
+              min_build_id = min_build_id,
+              slug = slug,
+              additional_filters = additional_filters
   )
   )
 }
@@ -178,7 +186,7 @@ build_crash_query <- function(probes.crashes, slug, tbl, min_build_id, crashes_q
   ))
 }
 
-build_scalar_query <- function(probes.scalar.sum, probes.scalar.max, slug, tbl, min_build_id, scalar_query_base. = scalar_query_base){
+build_scalar_query <- function(probes.scalar.sum, probes.scalar.max, slug, tbl, min_build_id, os=NULL, scalar_query_base. = scalar_query_base){
   query_scalar_sum <- dplyr::case_when(
     !is.null(probes.scalar.sum) ~ paste(paste('  ', 'SUM(COALESCE(', unlist(probes.scalar.sum), ', 0)) AS ', names(probes.scalar.sum), sep = '', collapse = ',\n'), ','),
     TRUE ~ ''
@@ -195,6 +203,9 @@ build_scalar_query <- function(probes.scalar.sum, probes.scalar.max, slug, tbl, 
     !is.null(probes.scalar.sum) ~ paste(paste('  ', 'MAX(', names(probes.scalar.max), ') AS ', names(probes.scalar.max), sep = '', collapse = ',\n'), ','),
     TRUE ~ ''
   )
+  additional_filters <- dplyr::case_when(
+    !is.null(os) ~ paste("AND normalized_os = '", os,"'", sep='') ,
+    TRUE ~ '')
   #query_scalar <- paste('  ', 'AVG(', scalars, ') AS ', scalars, sep = '', collapse = ',\n')
   return(glue(scalar_query_base, 
               query_scalar_sum = query_scalar_sum,
@@ -202,7 +213,8 @@ build_scalar_query <- function(probes.scalar.sum, probes.scalar.max, slug, tbl, 
               query_scalar_sum_2 = query_scalar_sum_2,
               query_scalar_max_2 = query_scalar_max_2,
               tbl = tbl,
-              min_build_id = min_build_id
+              min_build_id = min_build_id,
+              additional_filters = additional_filters
   )
   )
 }
@@ -220,7 +232,11 @@ build_delete_build_records_query <- function(tbl, min_build_id){
   )
 }
 
-build_analyzed_probe_query <- function(tbl, probe){
+build_analyzed_probe_query <- function(tbl, probe, os=NULL){
+  additional_filters <- dplyr::case_when(
+    !is.null(os) ~ paste("AND os = '", os,"'", sep='') ,
+    TRUE ~ "AND os = 'All'"
+  )
   return(glue(analyzed_probe_query_base,
-              tbl=tbl))
+              tbl=tbl, additional_filters=additional_filters))
 }
