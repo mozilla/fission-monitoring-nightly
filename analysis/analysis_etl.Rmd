@@ -343,7 +343,7 @@ results.crashes.win <- list()
 
 for (probe in names(probes.crashes)) {
   probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
-  results.crashes.win[[probe_per_hour]] <- process_crash(probe_per_hour, perc.high, bs_replicates)
+  results.crashes.win[[probe_per_hour]] <- process_crash(crasshes.df, probe_per_hour, perc.high, bs_replicates)
   if (is.debug)
     break
 }
@@ -353,11 +353,12 @@ for (probe in names(probes.crashes)) {
 client_count.stat <- function(x) length(which(!is.na(x) & x>0))
 for (probe in names(probes.crashes)) {
   probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
-  results.crashes.win[[probe_client_count]] <- process_crash(probe, 
-                                                         perc.high,
-                                                         bs_replicates,
-                                                         stat = client_count.stat,
-                                                         name = probe_client_count)
+  results.crashes.win[[probe_client_count]] <- process_crash(crashes.df,
+                                                             probe, 
+                                                             perc.high,
+                                                             bs_replicates,
+                                                             stat = client_count.stat,
+                                                             name = probe_client_count)
   if (is.debug)
     break
 }
@@ -377,11 +378,11 @@ if (is.debug) print(glue('Processing crash data.frame {crashes.df.nrow}'))
 
 Process the per usage hour probes. 
 ```{r crashes_agg_mac, warning=FALSE}
-results.crashes.mac <- list()
+results.crashes.osx <- list()
 
 for (probe in names(probes.crashes)) {
   probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
-  results.crashes.mac[[probe_per_hour]] <- process_crash(crashes.df, probe_per_hour, perc.high, bs_replicates)
+  results.crashes.osx[[probe_per_hour]] <- process_crash(crashes.df, probe_per_hour, perc.high, bs_replicates)
   if (is.debug)
     break
 }
@@ -391,7 +392,7 @@ for (probe in names(probes.crashes)) {
 client_count.stat <- function(x) length(which(!is.na(x) & x>0))
 for (probe in names(probes.crashes)) {
   probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
-  results.crashes.mac[[probe_client_count]] <- process_crash(crashes.df,
+  results.crashes.osx[[probe_client_count]] <- process_crash(crashes.df,
                                                              probe, 
                                                              perc.high,
                                                              bs_replicates,

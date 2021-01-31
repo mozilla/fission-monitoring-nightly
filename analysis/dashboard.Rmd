@@ -326,6 +326,132 @@ vw(list(config = list(
 vconcat = crash_plots) , TRUE)
 ```
 
+##### Windows
+
+```{r crash_rates_win, eval=TRUE}
+# query analyzed per hour data
+crashes <- list()
+for (probe in names(probes.crashes)) {
+  probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
+  crashes[[probe_per_hour]] <-
+    bq_project_query(project_id,
+                     build_analyzed_probe_query(tbl.analyzed, probe = probe_per_hour, os='Windows')) %>%
+    bq_table_download() %>%
+    as.data.table()
+}
+
+crash_plots <- list()
+
+for (probe in names(crashes)) {
+  df <- crashes[[probe]]
+  if (nrow(df) > 0) {
+    # print(probe)
+    crash_plots[[length(crash_plots) + 1]] <-
+      create.figure(
+        df,
+        title = probe,
+        yaxislab = 'Estimate',
+        width = W / 1.85,
+        height = H,
+        LA = 90
+      )
+  }
+}
+
+vw(list(config = list(
+  legend = list(
+    direction = 'horizontal',
+    orient = 'top',
+    title = NULL
+  )
+),
+vconcat = crash_plots) , TRUE)
+```
+
+##### Mac
+
+```{r crash_rates_mac, eval=TRUE}
+# query analyzed per hour data
+crashes <- list()
+for (probe in names(probes.crashes)) {
+  probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
+  crashes[[probe_per_hour]] <-
+    bq_project_query(project_id,
+                     build_analyzed_probe_query(tbl.analyzed, probe = probe_per_hour, os='Mac')) %>%
+    bq_table_download() %>%
+    as.data.table()
+}
+
+crash_plots <- list()
+
+for (probe in names(crashes)) {
+  df <- crashes[[probe]]
+  if (nrow(df) > 0) {
+    # print(probe)
+    crash_plots[[length(crash_plots) + 1]] <-
+      create.figure(
+        df,
+        title = probe,
+        yaxislab = 'Estimate',
+        width = W / 1.85,
+        height = H,
+        LA = 90
+      )
+  }
+}
+
+vw(list(config = list(
+  legend = list(
+    direction = 'horizontal',
+    orient = 'top',
+    title = NULL
+  )
+),
+vconcat = crash_plots) , TRUE)
+```
+
+##### Linux
+
+```{r crash_rates_linux, eval=TRUE}
+# query analyzed per hour data
+crashes <- list()
+for (probe in names(probes.crashes)) {
+  probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
+  crashes[[probe_per_hour]] <-
+    bq_project_query(project_id,
+                     build_analyzed_probe_query(tbl.analyzed, probe = probe_per_hour, os='Linux')) %>%
+    bq_table_download() %>%
+    as.data.table()
+}
+
+crash_plots <- list()
+
+for (probe in names(crashes)) {
+  df <- crashes[[probe]]
+  if (nrow(df) > 0) {
+    # print(probe)
+    crash_plots[[length(crash_plots) + 1]] <-
+      create.figure(
+        df,
+        title = probe,
+        yaxislab = 'Estimate',
+        width = W / 1.85,
+        height = H,
+        LA = 90
+      )
+  }
+}
+
+vw(list(config = list(
+  legend = list(
+    direction = 'horizontal',
+    orient = 'top',
+    title = NULL
+  )
+),
+vconcat = crash_plots) , TRUE)
+```
+
 #### Crash Rates: Unique Client Count{.tabset}
 
 ##### OS: ALL
@@ -368,6 +494,135 @@ vw(list(config = list(
 ),
 vconcat = crash_client_count_plots) , TRUE)
 ```
+
+
+##### Windows
+```{r crash_rates_nclients_win, eval=TRUE}
+# query analyzed per hour data
+crashes_client_count <- list()
+for (probe in names(probes.crashes)) {
+  probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
+  crashes_client_count[[probe_client_count]] <-
+    bq_project_query(project_id,
+                     build_analyzed_probe_query(tbl.analyzed, probe = probe_client_count, os='Windows')) %>%
+    bq_table_download() %>%
+    as.data.table()
+}
+
+crash_client_count_plots <- list()
+
+for (probe in names(crashes_client_count)) {
+  df <- crashes_client_count[[probe]]
+  if (nrow(df) > 0) {
+    # print(probe)
+    crash_client_count_plots[[length(crash_client_count_plots) + 1]] <-
+      create.figure(
+        df,
+        title = probe,
+        yaxislab = 'Estimate',
+        width = W / 1.85,
+        height = H,
+        LA = 90
+      )
+  }
+}
+
+vw(list(config = list(
+  legend = list(
+    direction = 'horizontal',
+    orient = 'top',
+    title = NULL
+  )
+),
+vconcat = crash_client_count_plots) , TRUE)
+```
+
+
+
+##### Mac
+```{r crash_rates_nclients_mac, eval=TRUE}
+# query analyzed per hour data
+crashes_client_count <- list()
+for (probe in names(probes.crashes)) {
+  probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
+  crashes_client_count[[probe_client_count]] <-
+    bq_project_query(project_id,
+                     build_analyzed_probe_query(tbl.analyzed, probe = probe_client_count, os='Mac')) %>%
+    bq_table_download() %>%
+    as.data.table()
+}
+
+crash_client_count_plots <- list()
+
+for (probe in names(crashes_client_count)) {
+  df <- crashes_client_count[[probe]]
+  if (nrow(df) > 0) {
+    # print(probe)
+    crash_client_count_plots[[length(crash_client_count_plots) + 1]] <-
+      create.figure(
+        df,
+        title = probe,
+        yaxislab = 'Estimate',
+        width = W / 1.85,
+        height = H,
+        LA = 90
+      )
+  }
+}
+
+vw(list(config = list(
+  legend = list(
+    direction = 'horizontal',
+    orient = 'top',
+    title = NULL
+  )
+),
+vconcat = crash_client_count_plots) , TRUE)
+```
+
+
+
+##### Linux
+```{r crash_rates_nclients_linux, eval=TRUE}
+# query analyzed per hour data
+crashes_client_count <- list()
+for (probe in names(probes.crashes)) {
+  probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
+  crashes_client_count[[probe_client_count]] <-
+    bq_project_query(project_id,
+                     build_analyzed_probe_query(tbl.analyzed, probe = probe_client_count, os='Linux')) %>%
+    bq_table_download() %>%
+    as.data.table()
+}
+
+crash_client_count_plots <- list()
+
+for (probe in names(crashes_client_count)) {
+  df <- crashes_client_count[[probe]]
+  if (nrow(df) > 0) {
+    # print(probe)
+    crash_client_count_plots[[length(crash_client_count_plots) + 1]] <-
+      create.figure(
+        df,
+        title = probe,
+        yaxislab = 'Estimate',
+        width = W / 1.85,
+        height = H,
+        LA = 90
+      )
+  }
+}
+
+vw(list(config = list(
+  legend = list(
+    direction = 'horizontal',
+    orient = 'top',
+    title = NULL
+  )
+),
+vconcat = crash_client_count_plots) , TRUE)
+```
+
 
 
 ### Usage{.tabset}
