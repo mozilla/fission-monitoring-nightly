@@ -152,7 +152,6 @@ performance_plots <- list()
 for (probe in names(hists)){
   df <- hists[[probe]]
   if (nrow(df) > 0) {
-    print(probe)
     performance_plots[[length(performance_plots) + 1]] <- create.figure(df, title=probe,
                     yaxislab='Estimate',width=W/1.85,height=H,
                     LA=90)
@@ -193,7 +192,7 @@ vw(list(
         ) ,TRUE)
 ```
 
-##### MAC
+##### Mac
 
 ```{r performance_osx, eval=TRUE}
 # query histogram datasets
@@ -284,10 +283,10 @@ vw(list(
 
 ### Stability{.tabset}
 
-#### Crash Rates: Per Hour
+#### Crash Rates: Per Hour{.tabset}
+##### OS: ALL
 
-
-```{r eval=TRUE}
+```{r crash_rates, eval=TRUE}
 # query analyzed per hour data
 crashes <- list()
 for (probe in names(probes.crashes)) {
@@ -327,10 +326,10 @@ vw(list(config = list(
 vconcat = crash_plots) , TRUE)
 ```
 
-#### Crash Rates: Unique Client Count
+#### Crash Rates: Unique Client Count{.tabset}
 
-
-```{r eval=TRUE}
+##### OS: ALL
+```{r crash_rates_nclients, eval=TRUE}
 # query analyzed per hour data
 crashes_client_count <- list()
 for (probe in names(probes.crashes)) {
@@ -371,13 +370,100 @@ vconcat = crash_client_count_plots) , TRUE)
 ```
 
 
-### Usage
-
-```{r eval=TRUE}
+### Usage{.tabset}
+#### OS: All
+```{r usage, eval=TRUE}
 usage <- list()
 for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))){
   if (probe == 'GFX_OMTP_PAINT_WAIT_TIME_RATIO') next
   usage[[probe]] <- bq_project_query(project_id, build_analyzed_probe_query(tbl.analyzed, probe = probe)) %>%
+    bq_table_download() %>%
+    as.data.table()
+}
+
+usage_plots <- list()
+
+for (probe in names(usage)){
+  df <- usage[[probe]]
+  if (nrow(df) > 0) {
+    # print(probe)
+    usage_plots[[length(usage_plots) + 1]] <- create.figure(df, title=probe,
+                    yaxislab='Estimate',width=W/1.85,height=H,
+                    LA=90)
+  }
+}
+
+vw(list(
+    config = list( legend = list(direction='horizontal',orient='top',title=NULL)),
+    vconcat=usage_plots
+        ) ,TRUE)
+  
+```
+
+#### Windows
+```{r usage_windows, eval=TRUE}
+usage <- list()
+for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))){
+  if (probe == 'GFX_OMTP_PAINT_WAIT_TIME_RATIO') next
+  usage[[probe]] <- bq_project_query(project_id, build_analyzed_probe_query(tbl.analyzed, probe = probe, os='Windows')) %>%
+    bq_table_download() %>%
+    as.data.table()
+}
+
+usage_plots <- list()
+
+for (probe in names(usage)){
+  df <- usage[[probe]]
+  if (nrow(df) > 0) {
+    # print(probe)
+    usage_plots[[length(usage_plots) + 1]] <- create.figure(df, title=probe,
+                    yaxislab='Estimate',width=W/1.85,height=H,
+                    LA=90)
+  }
+}
+
+vw(list(
+    config = list( legend = list(direction='horizontal',orient='top',title=NULL)),
+    vconcat=usage_plots
+        ) ,TRUE)
+  
+```
+
+#### Mac
+```{r usage_mac, eval=TRUE}
+usage <- list()
+for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))){
+  if (probe == 'GFX_OMTP_PAINT_WAIT_TIME_RATIO') next
+  usage[[probe]] <- bq_project_query(project_id, build_analyzed_probe_query(tbl.analyzed, probe = probe, os='Mac')) %>%
+    bq_table_download() %>%
+    as.data.table()
+}
+
+usage_plots <- list()
+
+for (probe in names(usage)){
+  df <- usage[[probe]]
+  if (nrow(df) > 0) {
+    # print(probe)
+    usage_plots[[length(usage_plots) + 1]] <- create.figure(df, title=probe,
+                    yaxislab='Estimate',width=W/1.85,height=H,
+                    LA=90)
+  }
+}
+
+vw(list(
+    config = list( legend = list(direction='horizontal',orient='top',title=NULL)),
+    vconcat=usage_plots
+        ) ,TRUE)
+  
+```
+
+#### Linux
+```{r usage_linux, eval=TRUE}
+usage <- list()
+for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))){
+  if (probe == 'GFX_OMTP_PAINT_WAIT_TIME_RATIO') next
+  usage[[probe]] <- bq_project_query(project_id, build_analyzed_probe_query(tbl.analyzed, probe = probe, os='Linux')) %>%
     bq_table_download() %>%
     as.data.table()
 }

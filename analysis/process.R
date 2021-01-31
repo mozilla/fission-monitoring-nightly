@@ -63,10 +63,10 @@ process_scalar <- function(df, probe, perc.high, bs_replicates) {
   return(scalar.res)
 }
 
-process_crash <- function(probe, perc.high, bs_replicates, stat=mean.narm, name = probe) {
+process_crash <- function(df, probe, perc.high, bs_replicates, stat=mean.narm, name = probe) {
   crashes.res <- tryCatch({
     print(probe)
-    crashes.df[get(probe) < quantile(get(probe), perc.high, na.rm = TRUE),
+    df[get(probe) < quantile(get(probe), perc.high, na.rm = TRUE),
                summarize.scalar(.SD[, list(id, branch, x =
                                              get(probe))], "x",
                                 bs_replicates, stat = stat),

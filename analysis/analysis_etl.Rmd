@@ -132,7 +132,7 @@ for (probe in names(probes.hist)) {
   results.hist.win[[probe]] <- process_histograms(probe, os='Windows')$summary
   results.hist.osx[[probe]] <- process_histograms(probe, os='Mac')$summary
   results.hist.linux[[probe]] <- process_histograms(probe, os='Linux')$summary
-  if (is.debug)
+  if (is.debug && probe != 'CHECKERBOARDING_SEVERITY')
      break
 }
 ```
@@ -142,20 +142,23 @@ for (probe in names(probes.hist)) {
 print('Processing histograms: 95th percentile')
 
 for (probe in names(probes.hist.perc.95)) {
-  results.hist[[probe]] <- process_histograms_95th(probe)$summary
-  results.hist[[probe]] <- process_histograms_95th(probe, os='Windows')$summary
-  results.hist[[probe]] <- process_histograms_95th(probe, os='Mac')$summary
-  results.hist[[probe]] <- process_histograms_95th(probe, os='Linux')$summary
-  if (is.debug)
+  if (is.debug) # TODO: This analysis takes WAY too long. Optimized bootstrapping. 
     break
+  results.hist[[probe]] <- process_histograms_95th(probe)$summary
+  # results.hist[[probe]] <- process_histograms_95th(probe, os='Windows')$summary
+  # results.hist[[probe]] <- process_histograms_95th(probe, os='Mac')$summary
+  # results.hist[[probe]] <- process_histograms_95th(probe, os='Linux')$summary
 }
 ```
 
 
 # Scalar Aggregation{.tabset}
 
+1. Pull the each's build per daily average of the scalars. 
+2. Calculate means and confidence intervals. 
+
 ## OS: ALL
-Pull the each's build per daily average of the scalars. 
+
 ```{r scalar_import}
 scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, slug, tbl.main, min_build_id))
 scalar.df <- bq_table_download(scalar) %>%
@@ -169,8 +172,6 @@ scalar.df.nrow <- nrow(scalar.df)
 if (is.debug) print(glue('Processing scalar data.frame {scalar.df.nrow}'))
 ```
 
-
-Calculate means and confidence intervals. 
 ```{r scalar_agg, warning=FALSE}
 results.scalar <- list()
 
@@ -187,7 +188,7 @@ for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))) {
 
 
 ## OS: Windows
-Pull the each's build per daily average of the scalars. 
+
 ```{r scalar_import_win}
 scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, slug, tbl.main, min_build_id, os='Windows'))
 scalar.df <- bq_table_download(scalar) %>%
@@ -202,12 +203,9 @@ if (is.debug) print(glue('Processing scalar data.frame {scalar.df.nrow}'))
 ```
 
 
-Calculate means and confidence intervals. 
+
 ```{r scalar_agg_win, warning=FALSE}
 results.scalar.win <- list()
-
-if (is.debug)
-  bs_replicates <- 20
 
 for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))) {
   print(probe)
@@ -220,7 +218,7 @@ for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))) {
 
 
 ## OS: Mac
-Pull the each's build per daily average of the scalars. 
+
 ```{r scalar_import_osx}
 scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, slug, tbl.main, min_build_id, os='Mac'))
 scalar.df <- bq_table_download(scalar) %>%
@@ -235,7 +233,7 @@ if (is.debug) print(glue('Processing scalar data.frame {scalar.df.nrow}'))
 ```
 
 
-Calculate means and confidence intervals. 
+
 ```{r scalar_agg_osx, warning=FALSE}
 results.scalar.osx <- list()
 
@@ -253,7 +251,7 @@ for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))) {
 
 
 ## OS: Linux
-Pull the each's build per daily average of the scalars. 
+
 ```{r scalar_import_linux}
 scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, slug, tbl.main, min_build_id, os='Linux'))
 scalar.df <- bq_table_download(scalar) %>%
@@ -268,7 +266,7 @@ if (is.debug) print(glue('Processing scalar data.frame {scalar.df.nrow}'))
 ```
 
 
-Calculate means and confidence intervals. 
+
 ```{r scalar_agg_linux, warning=FALSE}
 results.scalar.linux <- list()
 
@@ -285,9 +283,13 @@ for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))) {
 
 
 
-# Crash Aggregation
-Perform a similar analysis for crashes.
+# Crash Aggregation{.tabset}
 
+1. Pull the each's build per daily average of the crashes.
+2. Process the per usage hour probes. 
+3. Process the distinct client crashing. 
+
+## OS: All
 ```{r crash_import}
 crashes <-  bq_project_query(project_id, build_crash_query(probes.crashes, slug, tbl.crashes, min_build_id))
 crashes.df <- bq_table_download(crashes) %>%
@@ -303,26 +305,142 @@ results.crashes <- list()
 
 for (probe in names(probes.crashes)) {
   probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
-  results.crashes[[probe_per_hour]] <- process_crash(probe_per_hour, perc.high, bs_replicates)
+  results.crashes[[probe_per_hour]] <- process_crash(crashes.df, probe_per_hour, perc.high, bs_replicates)
   if (is.debug)
     break
 }
 ```
 
-Process the distinct client crashing. 
 ```{r crashes_count_agg, warning=FALSE}
 client_count.stat <- function(x) length(which(!is.na(x) & x>0))
 for (probe in names(probes.crashes)) {
   probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
-  results.crashes[[probe_client_count]] <- process_crash(probe, 
+  results.crashes[[probe_client_count]] <- process_crash(crashes.df,
+                                                         probe, 
                                                          perc.high,
                                                          bs_replicates,
-                                                     stat = client_count.stat,
-                                                     name = probe_client_count)
+                                                         stat = client_count.stat,
+                                                         name = probe_client_count)
   if (is.debug)
     break
 }
 ```
+
+
+## OS: Windows
+```{r crash_import_win}
+crashes <-  bq_project_query(project_id, build_crash_query(probes.crashes, slug, tbl.crashes, min_build_id, os='Windows_NT'))
+crashes.df <- bq_table_download(crashes) %>%
+  as.data.table()
+
+crashes.df.nrow <- nrow(crashes.df)
+if (is.debug) print(glue('Processing crash data.frame {crashes.df.nrow}'))
+```
+
+Process the per usage hour probes. 
+```{r crashes_agg_win, warning=FALSE}
+results.crashes.win <- list()
+
+for (probe in names(probes.crashes)) {
+  probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
+  results.crashes.win[[probe_per_hour]] <- process_crash(probe_per_hour, perc.high, bs_replicates)
+  if (is.debug)
+    break
+}
+```
+
+```{r crashes_count_agg_win, warning=FALSE}
+client_count.stat <- function(x) length(which(!is.na(x) & x>0))
+for (probe in names(probes.crashes)) {
+  probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
+  results.crashes.win[[probe_client_count]] <- process_crash(probe, 
+                                                         perc.high,
+                                                         bs_replicates,
+                                                         stat = client_count.stat,
+                                                         name = probe_client_count)
+  if (is.debug)
+    break
+}
+```
+
+
+
+## OS: Mac
+```{r crash_import_mac}
+crashes <-  bq_project_query(project_id, build_crash_query(probes.crashes, slug, tbl.crashes, min_build_id, os='Darwin'))
+crashes.df <- bq_table_download(crashes) %>%
+  as.data.table()
+
+crashes.df.nrow <- nrow(crashes.df)
+if (is.debug) print(glue('Processing crash data.frame {crashes.df.nrow}'))
+```
+
+Process the per usage hour probes. 
+```{r crashes_agg_mac, warning=FALSE}
+results.crashes.mac <- list()
+
+for (probe in names(probes.crashes)) {
+  probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
+  results.crashes.mac[[probe_per_hour]] <- process_crash(crashes.df, probe_per_hour, perc.high, bs_replicates)
+  if (is.debug)
+    break
+}
+```
+
+```{r crashes_count_agg_mac, warning=FALSE}
+client_count.stat <- function(x) length(which(!is.na(x) & x>0))
+for (probe in names(probes.crashes)) {
+  probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
+  results.crashes.mac[[probe_client_count]] <- process_crash(crashes.df,
+                                                             probe, 
+                                                             perc.high,
+                                                             bs_replicates,
+                                                             stat = client_count.stat,
+                                                             name = probe_client_count)
+  if (is.debug)
+    break
+}
+```
+
+
+## OS: Linux
+```{r crash_import_linux}
+crashes <-  bq_project_query(project_id, build_crash_query(probes.crashes, slug, tbl.crashes, min_build_id, os='Linux'))
+crashes.df <- bq_table_download(crashes) %>%
+  as.data.table()
+
+crashes.df.nrow <- nrow(crashes.df)
+if (is.debug) print(glue('Processing crash data.frame {crashes.df.nrow}'))
+```
+
+Process the per usage hour probes. 
+```{r crashes_agg_linux, warning=FALSE}
+results.crashes.linux <- list()
+
+for (probe in names(probes.crashes)) {
+  probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
+  results.crashes.linux[[probe_per_hour]] <- process_crash(crashes.df, probe_per_hour, perc.high, bs_replicates)
+  if (is.debug)
+    break
+}
+```
+
+```{r crashes_count_agg_linux, warning=FALSE}
+client_count.stat <- function(x) length(which(!is.na(x) & x>0))
+for (probe in names(probes.crashes)) {
+  probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
+  results.crashes.linux[[probe_client_count]] <- process_crash(crashes.df, 
+                                                             probe, 
+                                                         perc.high,
+                                                         bs_replicates,
+                                                         stat = client_count.stat,
+                                                         name = probe_client_count)
+  if (is.debug)
+    break
+}
+```
+
+
 
 # Export
 
@@ -339,9 +457,9 @@ final.df <- rbindlist(results.hist) %>%
   rbind(., rbindlist(results.scalar.osx) %>% mutate(os = 'Mac')) %>%
   rbind(., rbindlist(results.scalar.linux) %>% mutate(os = 'Linux')) %>%
   rbind(., rbindlist(results.crashes) %>% mutate(os = 'All')) %>%
-  # rbind(., rbindlist(results.crashes.win) %>% mutate(os = 'Windows')) %>%
-  # rbind(., rbindlist(results.crashes.osx) %>% mutate(os = 'Mac')) %>%
-  # rbind(., rbindlist(results.crashes.linux) %>% mutate(os = 'Linux')) %>%
+  rbind(., rbindlist(results.crashes.win) %>% mutate(os = 'Windows')) %>%
+  rbind(., rbindlist(results.crashes.osx) %>% mutate(os = 'Mac')) %>%
+  rbind(., rbindlist(results.crashes.linux) %>% mutate(os = 'Linux')) %>%
   mutate(date_computed = Sys.Date())
 
 final.nrow <- nrow(final.df)

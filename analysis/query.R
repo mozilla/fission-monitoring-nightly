@@ -85,6 +85,8 @@ WITH crashes as (
   SUM(usage_hours) as USAGE_HOURS,
 {query_crashes}
 FROM {tbl}
+WHERE experiment_branch is not NULL
+{additional_filters}
 GROUP BY 1, 2, 3
 )
 SELECT
@@ -174,15 +176,19 @@ build_hist_query <- function(probe.hist, slug, tbl, min_build_id,  os, hist_quer
   )
 }
 
-build_crash_query <- function(probes.crashes, slug, tbl, min_build_id, crashes_query_base. = crashes_query_base){
+build_crash_query <- function(probes.crashes, slug, tbl, min_build_id, os=NULL, crashes_query_base. = crashes_query_base){
   query_crashes <- paste('  ', 'SUM(', unlist(probes.crashes), ') AS ', names(probes.crashes), sep = '', collapse = ',\n') 
   query_crashes_per_hour <- paste('  SAFE_DIVIDE(', names(probes.crashes), ', USAGE_HOURS)', ' AS ', names(probes.crashes), '_PER_HOUR', sep='', collapse=',\n')
+  additional_filters <- dplyr::case_when(
+    !is.null(os) ~ paste("AND os_name = '", os,"'", sep='') ,
+    TRUE ~ '')
   return(glue(crashes_query_base.,
               tbl = tbl,
               query_crashes = query_crashes,
               query_crashes_probes = paste('  ', names(probes.crashes), collapse=',\n'),
               query_crashes_per_hour = query_crashes_per_hour,
-              min_build_id = min_build_id
+              min_build_id = min_build_id,
+              additional_filters = additional_filters
   ))
 }
 
@@ -206,7 +212,6 @@ build_scalar_query <- function(probes.scalar.sum, probes.scalar.max, slug, tbl, 
   additional_filters <- dplyr::case_when(
     !is.null(os) ~ paste("AND normalized_os = '", os,"'", sep='') ,
     TRUE ~ '')
-  #query_scalar <- paste('  ', 'AVG(', scalars, ') AS ', scalars, sep = '', collapse = ',\n')
   return(glue(scalar_query_base, 
               query_scalar_sum = query_scalar_sum,
               query_scalar_max = query_scalar_max,
