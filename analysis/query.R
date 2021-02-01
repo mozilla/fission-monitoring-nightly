@@ -240,7 +240,7 @@ build_delete_build_records_query <- function(tbl, min_build_id){
 build_analyzed_probe_query <- function(tbl, probe, os=NULL){
   additional_filters <- dplyr::case_when(
     !is.null(os) ~ paste("AND os = '", os,"'", sep='') ,
-    TRUE ~ "AND os = 'All'"
+    TRUE ~ "AND (os = 'All' OR os IS NULL)"
   )
   return(glue(analyzed_probe_query_base,
               tbl=tbl, additional_filters=additional_filters))

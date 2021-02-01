@@ -121,7 +121,7 @@ Hovering over each point reveals a pop-up displaying the build_id, branch, numbe
 
 Zoom: Use mouse-wheel, and double-click to reset.
 
-```{r eval=TRUE}
+```{r max_build, eval=TRUE}
 max_build_id <- bq_project_query(project_id, 
                                  glue("SELECT max(build_id) as max_build_id from {tbl.analyzed}")) %>%
   bq_table_download() %>% 
@@ -252,7 +252,7 @@ vw(list(
 
 #### 95th Percentile
 
-```{r eval=TRUE}
+```{r performance_95th, eval=TRUE}
 # query histogram datasets
 hists <- list()
 for (probe in names(probes.hist.perc.95)){

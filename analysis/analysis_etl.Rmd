@@ -343,7 +343,7 @@ results.crashes.win <- list()
 
 for (probe in names(probes.crashes)) {
   probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
-  results.crashes.win[[probe_per_hour]] <- process_crash(crasshes.df, probe_per_hour, perc.high, bs_replicates)
+  results.crashes.win[[probe_per_hour]] <- process_crash(crashes.df, probe_per_hour, perc.high, bs_replicates)
   if (is.debug)
     break
 }
