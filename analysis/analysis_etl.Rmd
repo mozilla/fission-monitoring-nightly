@@ -503,6 +503,7 @@ gc()
 
 # TODO
 
+* Deletion of records should be smart: e.g., only delete metric fields with successful analysis. 
 * For scalar query, perform dense_rank on client_id to get `id` field
 * Scalar bootstrapping should all be done with same replicates. Statistically more sound, and MUCH faster. 
 * Dynamically name control/treatment in stats.R
