@@ -111,7 +111,7 @@ tbl.analyzed <- Sys.getenv('BQ_OUTPUT_TABLE')
 **Description**: This is dashboard monitoring the development of Fission, by utilizing Normandy selected cohorts (e.g., Fission-enabled vs. Fission-disabled). For further details see the [experimenter ticket](https://experimenter.services.mozilla.com/experiments/fission-nightly/). 
 
 The dashboard is arranged in 3 tabs corresponding to performance, stability and
-usage.Two lines one for each branch and each point corresponds to a specific build.
+usage. Each line represents a branch and each point corresponds to a specific build.
 
 * Blue line: enabled branch
 * Red line: disabled branch 
@@ -179,6 +179,8 @@ performance_plots <- list()
 for (probe in names(hists)){
   df <- hists[[probe]]
   if (nrow(df) > 0) {
+     df <- df %>% 
+      filter(!build_id %in% (df[rowSums(is.na(df)) > 0,] %>% pull(build_id))) # remove bunk builds
     # print(probe)
     performance_plots[[length(performance_plots) + 1]] <- create.figure(df, title=probe,
                     yaxislab='Estimate',width=W/1.85,height=H,
@@ -208,6 +210,8 @@ performance_plots <- list()
 for (probe in names(hists)){
   df <- hists[[probe]]
   if (nrow(df) > 0) {
+    df <- df %>% 
+      filter(!build_id %in% (df[rowSums(is.na(df)) > 0,] %>% pull(build_id))) # remove bunk builds
     # print(probe)
     performance_plots[[length(performance_plots) + 1]] <- create.figure(df, title=probe,
                     yaxislab='Estimate',width=W/1.85,height=H,
@@ -238,6 +242,8 @@ for (probe in names(hists)){
   df <- hists[[probe]]
   if (nrow(df) > 0) {
     # print(probe)
+    df <- df %>% 
+      filter(!build_id %in% (df[rowSums(is.na(df)) > 0,] %>% pull(build_id))) # remove bunk builds
     performance_plots[[length(performance_plots) + 1]] <- create.figure(df, title=probe,
                     yaxislab='Estimate',width=W/1.85,height=H,
                     LA=90)
@@ -345,6 +351,8 @@ crash_plots <- list()
 for (probe in names(crashes)) {
   df <- crashes[[probe]]
   if (nrow(df) > 0) {
+     df <- df %>% 
+      filter(!build_id %in% (df[rowSums(is.na(df)) > 0,] %>% pull(build_id))) # remove bunk builds
     # print(probe)
     crash_plots[[length(crash_plots) + 1]] <-
       create.figure(
@@ -387,6 +395,8 @@ crash_plots <- list()
 for (probe in names(crashes)) {
   df <- crashes[[probe]]
   if (nrow(df) > 0) {
+     df <- df %>% 
+      filter(!build_id %in% (df[rowSums(is.na(df)) > 0,] %>% pull(build_id))) # remove bunk builds
     # print(probe)
     crash_plots[[length(crash_plots) + 1]] <-
       create.figure(
@@ -429,6 +439,8 @@ crash_plots <- list()
 for (probe in names(crashes)) {
   df <- crashes[[probe]]
   if (nrow(df) > 0) {
+     df <- df %>% 
+      filter(!build_id %in% (df[rowSums(is.na(df)) > 0,] %>% pull(build_id))) # remove bunk builds
     # print(probe)
     crash_plots[[length(crash_plots) + 1]] <-
       create.figure(
@@ -472,6 +484,8 @@ crash_client_count_plots <- list()
 for (probe in names(crashes_client_count)) {
   df <- crashes_client_count[[probe]]
   if (nrow(df) > 0) {
+     df <- df %>% 
+      filter(!build_id %in% (df[rowSums(is.na(df)) > 0,] %>% pull(build_id))) # remove bunk builds
     # print(probe)
     crash_client_count_plots[[length(crash_client_count_plots) + 1]] <-
       create.figure(
@@ -514,6 +528,8 @@ crash_client_count_plots <- list()
 for (probe in names(crashes_client_count)) {
   df <- crashes_client_count[[probe]]
   if (nrow(df) > 0) {
+     df <- df %>% 
+      filter(!build_id %in% (df[rowSums(is.na(df)) > 0,] %>% pull(build_id))) # remove bunk builds
     # print(probe)
     crash_client_count_plots[[length(crash_client_count_plots) + 1]] <-
       create.figure(
@@ -557,6 +573,8 @@ crash_client_count_plots <- list()
 for (probe in names(crashes_client_count)) {
   df <- crashes_client_count[[probe]]
   if (nrow(df) > 0) {
+     df <- df %>% 
+      filter(!build_id %in% (df[rowSums(is.na(df)) > 0,] %>% pull(build_id))) # remove bunk builds
     # print(probe)
     crash_client_count_plots[[length(crash_client_count_plots) + 1]] <-
       create.figure(
@@ -600,6 +618,8 @@ crash_client_count_plots <- list()
 for (probe in names(crashes_client_count)) {
   df <- crashes_client_count[[probe]]
   if (nrow(df) > 0) {
+     df <- df %>% 
+      filter(!build_id %in% (df[rowSums(is.na(df)) > 0,] %>% pull(build_id))) # remove bunk builds
     # print(probe)
     crash_client_count_plots[[length(crash_client_count_plots) + 1]] <-
       create.figure(
@@ -670,6 +690,8 @@ usage_plots <- list()
 for (probe in names(usage)){
   df <- usage[[probe]]
   if (nrow(df) > 0) {
+     df <- df %>% 
+      filter(!build_id %in% (df[rowSums(is.na(df)) > 0,] %>% pull(build_id))) # remove bunk builds
     # print(probe)
     usage_plots[[length(usage_plots) + 1]] <- create.figure(df, title=probe,
                     yaxislab='Estimate',width=W/1.85,height=H,
@@ -699,6 +721,8 @@ usage_plots <- list()
 for (probe in names(usage)){
   df <- usage[[probe]]
   if (nrow(df) > 0) {
+     df <- df %>% 
+      filter(!build_id %in% (df[rowSums(is.na(df)) > 0,] %>% pull(build_id))) # remove bunk builds
     # print(probe)
     usage_plots[[length(usage_plots) + 1]] <- create.figure(df, title=probe,
                     yaxislab='Estimate',width=W/1.85,height=H,
@@ -728,6 +752,8 @@ usage_plots <- list()
 for (probe in names(usage)){
   df <- usage[[probe]]
   if (nrow(df) > 0) {
+     df <- df %>% 
+      filter(!build_id %in% (df[rowSums(is.na(df)) > 0,] %>% pull(build_id))) # remove bunk builds
     # print(probe)
     usage_plots[[length(usage_plots) + 1]] <- create.figure(df, title=probe,
                     yaxislab='Estimate',width=W/1.85,height=H,
