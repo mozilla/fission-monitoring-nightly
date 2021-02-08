@@ -114,3 +114,13 @@ expandlims <- function(s, p = 0.05) {
   r <- range(s)
   r + c(-1, 1) * diff(r) * p / 2
 }
+
+remove_na <- function(df){
+  if (nrow(df) > 0) {
+    df_clean <- df %>% 
+      filter(!build_id %in% (df[rowSums(is.na(df)) > 0,] %>% pull(build_id))) 
+  } else{
+    df_clean <- df
+  }
+  return(df_clean)
+}

@@ -107,18 +107,6 @@ tbl.crashes <- Sys.getenv('BQ_INPUT_CRASH_TABLE')
 tbl.analyzed <- Sys.getenv('BQ_OUTPUT_TABLE')
 ```
 
-```{r helpers, echo=FALSE}
-remove_na <- function(df){
-  if (nrow(df) > 0) {
-    df_clean <- df %>% 
-      filter(!build_id %in% (df[rowSums(is.na(df)) > 0,] %>% pull(build_id))) 
-  } else{
-    df_clean <- df
-  }
-  return(df_clean)
-}
-```
-
 **Description**: This is dashboard monitoring the development of Fission, by utilizing Normandy selected cohorts (e.g., Fission-enabled vs. Fission-disabled). For further details see the [experimenter ticket](https://experimenter.services.mozilla.com/experiments/fission-nightly/). 
 
 The dashboard is arranged in 3 tabs corresponding to performance, stability and
