@@ -149,7 +149,7 @@ for (probe in c(names(probes.hist), 'GFX_OMTP_PAINT_WAIT_TIME_RATIO')){
 performance_plots <- list()
 
 for (probe in names(hists)){
-  df <- remove_na(hists[[probe]])
+  df <- hists[[probe]]
   if (nrow(df) > 0) {
     performance_plots[[length(performance_plots) + 1]] <- create.figure(df, title=probe,
                     yaxislab='Estimate',width=W/1.85,height=H,
@@ -260,7 +260,7 @@ for (probe in names(probes.hist.perc.95)){
 perf_95th_plots <- list()
 
 for (probe in names(hists)){
-  df <- remove_na(hists[[probe]])
+  df <- hists[[probe]]
   if (nrow(df) > 0) {
     perf_95th_plots[[length(perf_95th_plots) + 1]] <- create.figure(df, title=probe,
                     yaxislab='Estimate',width=W/1.85,height=H,
@@ -296,7 +296,7 @@ for (probe in names(probes.crashes)) {
 crash_plots <- list()
 
 for (probe in names(crashes)) {
-  df <- remove_na(crashes[[probe]])
+  df <- crashes[[probe]]
   if (nrow(df) > 0) {
     crash_plots[[length(crash_plots) + 1]] <-
       create.figure(
@@ -461,7 +461,7 @@ for (probe in names(probes.crashes)) {
 crash_client_count_plots <- list()
 
 for (probe in names(crashes_client_count)) {
-  df <- remove_na(crashes_client_count[[probe]])
+  df <- crashes_client_count[[probe]]
   if (nrow(df) > 0) {
     crash_client_count_plots[[length(crash_client_count_plots) + 1]] <-
       create.figure(
@@ -626,7 +626,7 @@ for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))){
 usage_plots <- list()
 
 for (probe in names(usage)){
-  df <- remove_na(usage[[probe]])
+  df <- usage[[probe]]
   if (nrow(df) > 0) {
     usage_plots[[length(usage_plots) + 1]] <- create.figure(df, title=probe,
                     yaxislab='Estimate',width=W/1.85,height=H,
