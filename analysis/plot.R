@@ -116,11 +116,12 @@ expandlims <- function(s, p = 0.05) {
 }
 
 remove_na <- function(df){
-  if (nrow(df) > 0) {
-    df_clean <- df %>% 
-      filter(!build_id %in% (df[rowSums(is.na(df)) > 0,] %>% pull(build_id))) 
-  } else{
-    df_clean <- df
-  }
+  df_clean <- df
+  # if (nrow(df) > 0) {
+  #   df_clean <- df %>% 
+  #     filter(!build_id %in% (df[rowSums(is.na(df)) > 0,] %>% pull(build_id))) 
+  # } else{
+  #   df_clean <- df
+  # }
   return(df_clean)
 }
