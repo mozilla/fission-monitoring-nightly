@@ -6,6 +6,8 @@ exp_min_build_id <- 20201012
 #### Analysis-specific ####
 # Breakdown by how probes are analyzed # 
 probes.hist <- list(
+  'CONTENT_PROCESS_COUNT' = 'payload.histograms.content_process_count',
+  # 'CONTENT_PROCESS_MAX' =  'payload.histograms.content_process_max',
   "CHECKERBOARDING_SEVERITY" = 'payload.processes.gpu.histograms.checkerboard_severity',
   "CHILD_PROCESS_LAUNCH_MS" = 'payload.histograms.child_process_launch_ms',
   "CONTENT_FRAME_TIME_VSYNC" = 'payload.histograms.content_frame_time_vsync',
