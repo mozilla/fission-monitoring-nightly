@@ -125,6 +125,9 @@ max_build_id <- bq_project_query(project_id,
                                  glue("SELECT max(build_id) as max_build_id from {tbl.analyzed}")) %>%
   bq_table_download() %>% 
   pull(max_build_id)
+
+# remove FX_NUMBER_OF_UNIQUE_SITE_ORIGINS  from dashboard (but maintained in analysis)
+hist_probes <- names(probes.hist)[!sapply(names(probes.hist), startsWith, prefix = 'FX_NUMBER_OF_UNIQUE_SITE_ORIGINS')]
 ```
 
 Information for builds up to `r as.Date(as.character(max_build_id), format = '%Y%m%d')`.
@@ -140,7 +143,7 @@ Information for builds up to `r as.Date(as.character(max_build_id), format = '%Y
 ```{r performance, eval=TRUE}
 # query histogram datasets
 hists <- list()
-for (probe in c(names(probes.hist), 'GFX_OMTP_PAINT_WAIT_TIME_RATIO')){
+for (probe in c(hist_probes, 'GFX_OMTP_PAINT_WAIT_TIME_RATIO')){
   hists[[probe]] <- bq_project_query(project_id, build_analyzed_probe_query(tbl.analyzed, probe = probe)) %>%
     bq_table_download() %>%
     as.data.table()
@@ -167,7 +170,7 @@ vw(list(
 ```{r performance_windows, eval=TRUE}
 # query histogram datasets
 hists <- list()
-for (probe in c(names(probes.hist), 'GFX_OMTP_PAINT_WAIT_TIME_RATIO')){
+for (probe in c(hist_probes, 'GFX_OMTP_PAINT_WAIT_TIME_RATIO')){
   hists[[probe]] <- bq_project_query(project_id, build_analyzed_probe_query(tbl.analyzed, probe = probe, os='Windows')) %>%
     bq_table_download() %>%
     as.data.table()
@@ -195,7 +198,7 @@ vw(list(
 ```{r performance_osx, eval=TRUE}
 # query histogram datasets
 hists <- list()
-for (probe in c(names(probes.hist), 'GFX_OMTP_PAINT_WAIT_TIME_RATIO')){
+for (probe in c(hist_probes, 'GFX_OMTP_PAINT_WAIT_TIME_RATIO')){
   hists[[probe]] <- bq_project_query(project_id, build_analyzed_probe_query(tbl.analyzed, probe = probe, os='Mac')) %>%
     bq_table_download() %>%
     as.data.table()
@@ -223,7 +226,7 @@ vw(list(
 ```{r performance_linux, eval=TRUE}
 # query histogram datasets
 hists <- list()
-for (probe in c(names(probes.hist), 'GFX_OMTP_PAINT_WAIT_TIME_RATIO')){
+for (probe in c(hist_probes, 'GFX_OMTP_PAINT_WAIT_TIME_RATIO')){
   hists[[probe]] <- bq_project_query(project_id, build_analyzed_probe_query(tbl.analyzed, probe = probe, os='Linux')) %>%
     bq_table_download() %>%
     as.data.table()
