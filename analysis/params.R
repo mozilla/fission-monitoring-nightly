@@ -51,6 +51,7 @@ probes.hist <- list(
 )
 
 probes.hist.perc.95 <- list(
+  'CONTENT_PROCESS_COUNT_95TH' = 'payload.histograms.content_process_count',
   "CHECKERBOARDING_SEVERITY_95TH" ='payload.processes.gpu.histograms.checkerboard_severity',
   "CHILD_PROCESS_LAUNCH_MS_95TH" ='payload.histograms.child_process_launch_ms',
   "CONTENT_FRAME_TIME_VSYNC_95TH" ='payload.histograms.content_frame_time_vsync',
@@ -77,6 +78,10 @@ probes.hist.perc.95 <- list(
   #'FX_PAGE_LOAD_MS_2_95TH' = 'payload.histograms.fx_page_load_ms_2',
   'PERF_PAGE_LOAD_TIME_MS_95TH' = 'payload.processes.content.histograms.perf_page_load_time_ms',
   "LOADED_TAB_COUNT_95TH" ='payload.histograms.loaded_tab_count'
+)
+
+probes.hist.max <- list(
+  'CONTENT_PROCESS_MAX' = 'payload.histograms.content_process_max'
 )
 
 probes.scalar.sum <- list(

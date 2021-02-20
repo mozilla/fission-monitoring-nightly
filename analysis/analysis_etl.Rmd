@@ -160,7 +160,7 @@ for (probe in names(probes.hist.perc.95)) {
 ## OS: ALL
 
 ```{r scalar_import}
-scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, slug, tbl.main, min_build_id))
+scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, probes.hist.max, slug, tbl.main, min_build_id))
 scalar.df <- bq_table_download(scalar) %>%
      mutate(branch = case_when(
         branch == 'fission-enabled' ~ 'enabled',
@@ -190,7 +190,7 @@ for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))) {
 ## OS: Windows
 
 ```{r scalar_import_win}
-scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, slug, tbl.main, min_build_id, os='Windows'))
+scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, probes.hist.max, slug, tbl.main, min_build_id, os='Windows'))
 scalar.df <- bq_table_download(scalar) %>%
      mutate(branch = case_when(
         branch == 'fission-enabled' ~ 'enabled',
@@ -220,7 +220,7 @@ for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))) {
 ## OS: Mac
 
 ```{r scalar_import_osx}
-scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, slug, tbl.main, min_build_id, os='Mac'))
+scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, probes.hist.max, slug, tbl.main, min_build_id, os='Mac'))
 scalar.df <- bq_table_download(scalar) %>%
      mutate(branch = case_when(
         branch == 'fission-enabled' ~ 'enabled',
@@ -253,7 +253,7 @@ for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))) {
 ## OS: Linux
 
 ```{r scalar_import_linux}
-scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, slug, tbl.main, min_build_id, os='Linux'))
+scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, probes.hist.max, slug, tbl.main, min_build_id, os='Linux'))
 scalar.df <- bq_table_download(scalar) %>%
      mutate(branch = case_when(
         branch == 'fission-enabled' ~ 'enabled',

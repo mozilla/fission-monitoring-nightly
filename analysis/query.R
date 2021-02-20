@@ -108,7 +108,8 @@ WITH daily_agg as (
     `moz-fx-data-shared-prod`.udf.get_key(environment.experiments,'{slug}').branch AS branch,
     cast(substr(application.build_id,1,8) as int64) AS buildid,
     {query_scalar_sum}
-    {query_scalar_max}
+{query_scalar_max}
+{query_hist_max}
     
   FROM {tbl}
   WHERE
@@ -122,6 +123,7 @@ SELECT
   buildid as build_id,
 {query_scalar_sum_2}
 {query_scalar_max_2}
+{query_hist_max_2}
 FROM daily_agg
 WHERE buildid >= {min_build_id}
 GROUP BY 1, 2, 3
@@ -192,15 +194,23 @@ build_crash_query <- function(probes.crashes, slug, tbl, min_build_id, os=NULL, 
   ))
 }
 
-build_scalar_query <- function(probes.scalar.sum, probes.scalar.max, slug, tbl, min_build_id, os=NULL, scalar_query_base. = scalar_query_base){
+build_scalar_query <- function(probes.scalar.sum, probes.scalar.max, probes.hist.max, slug, tbl, min_build_id, os=NULL, scalar_query_base. = scalar_query_base){
   query_scalar_sum <- dplyr::case_when(
     !is.null(probes.scalar.sum) ~ paste(paste('  ', 'SUM(COALESCE(', unlist(probes.scalar.sum), ', 0)) AS ', names(probes.scalar.sum), sep = '', collapse = ',\n'), ','),
     TRUE ~ ''
   )
   query_scalar_max<- dplyr::case_when(
-    !is.null(probes.scalar.max) ~ paste('  ', 'MAX(', unlist(probes.scalar.max), ') AS ', names(probes.scalar.max), sep = '', collapse = ',\n'),
+    !is.null(probes.scalar.max) ~ paste(paste('  ', 'MAX(', unlist(probes.scalar.max), ') AS ', names(probes.scalar.max), sep = '', collapse = ',\n'), ','),
     TRUE ~ ''
   )
+  
+  query_hist_max <- dplyr::case_when(
+    !is.null(probes.hist.max) ~ paste('  ', 
+                                      'MAX(COALESCE(`moz-fx-data-shared-prod.udf.histogram_max_key_with_nonzero_value`(', unlist(probes.hist.max), '), 0)) AS ', 
+                                      names(probes.hist.max), sep = '', collapse = ',\n'),
+    TRUE ~ ''
+  )
+  
   query_scalar_sum_2 <- dplyr::case_when(
     !is.null(probes.scalar.sum) ~ paste(paste('  ', 'SUM(COALESCE(', names(probes.scalar.sum), ', 0)) AS ', names(probes.scalar.sum), sep = '', collapse = ',\n'), ','),
     TRUE ~ ''
@@ -209,14 +219,22 @@ build_scalar_query <- function(probes.scalar.sum, probes.scalar.max, slug, tbl, 
     !is.null(probes.scalar.sum) ~ paste(paste('  ', 'MAX(', names(probes.scalar.max), ') AS ', names(probes.scalar.max), sep = '', collapse = ',\n'), ','),
     TRUE ~ ''
   )
+  
+  query_hist_max_2 <- dplyr::case_when(
+    !is.null(probes.scalar.sum) ~ paste(paste('  ', 'MAX(', names(probes.hist.max), ') AS ', names(probes.hist.max), sep = '', collapse = ',\n'), ','),
+    TRUE ~ ''
+  )
+  
   additional_filters <- dplyr::case_when(
     !is.null(os) ~ paste("AND normalized_os = '", os,"'", sep='') ,
     TRUE ~ '')
   return(glue(scalar_query_base, 
               query_scalar_sum = query_scalar_sum,
               query_scalar_max = query_scalar_max,
+              query_hist_max = query_hist_max,
               query_scalar_sum_2 = query_scalar_sum_2,
               query_scalar_max_2 = query_scalar_max_2,
+              query_hist_max_2 = query_hist_max_2,
               tbl = tbl,
               min_build_id = min_build_id,
               additional_filters = additional_filters
