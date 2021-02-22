@@ -178,11 +178,9 @@ results.scalar <- list()
 if (is.debug)
   bs_replicates <- 20
 
-for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))) {
+for (probe in c(names(probes.scalar.sum), names(probes.scalar.max), names(probes.hist.max))) {
   print(probe)
   results.scalar[[probe]] <- process_scalar(scalar.df, probe, perc.high, bs_replicates)
-  if (is.debug)
-    break
 }
 ```
 
@@ -207,11 +205,9 @@ if (is.debug) print(glue('Processing scalar data.frame {scalar.df.nrow}'))
 ```{r scalar_agg_win, warning=FALSE}
 results.scalar.win <- list()
 
-for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))) {
+for (probe in c(names(probes.scalar.sum), names(probes.scalar.max), names(probes.hist.max))) {
   print(probe)
   results.scalar.win[[probe]] <- process_scalar(scalar.df, probe, perc.high, bs_replicates)
-  if (is.debug)
-    break
 }
 ```
 
@@ -240,11 +236,9 @@ results.scalar.osx <- list()
 if (is.debug)
   bs_replicates <- 20
 
-for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))) {
+for (probe in c(names(probes.scalar.sum), names(probes.scalar.max), names(probes.hist.max))) {
   print(probe)
   results.scalar.osx[[probe]] <- process_scalar(scalar.df, probe, perc.high, bs_replicates)
-  if (is.debug)
-    break
 }
 ```
 
@@ -273,11 +267,9 @@ results.scalar.linux <- list()
 if (is.debug)
   bs_replicates <- 20
 
-for (probe in c(names(probes.scalar.sum), names(probes.scalar.max))) {
+for (probe in c(names(probes.scalar.sum), names(probes.scalar.max), names(probes.hist.max))) {
   print(probe)
   results.scalar.linux[[probe]] <- process_scalar(scalar.df, probe, perc.high, bs_replicates)
-  if (is.debug)
-    break
 }
 ```
 
