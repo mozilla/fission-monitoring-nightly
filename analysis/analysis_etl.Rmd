@@ -287,6 +287,16 @@ crashes <-  bq_project_query(project_id, build_crash_query(probes.crashes, slug,
 crashes.df <- bq_table_download(crashes) %>%
   as.data.table()
 
+crashes.ui <-  bq_project_query(project_id, 
+                                build_crash_ui_query(probes.crashes.ui, slug, 
+                                                  tbl.main, min_build_id)) %>%
+  bq_table_download() %>%
+     mutate(branch = case_when(
+        branch == 'fission-enabled' ~ 'enabled',
+         TRUE ~ 'disabled'
+       )) %>% 
+  as.data.table()
+  
 crashes.df.nrow <- nrow(crashes.df)
 if (is.debug) print(glue('Processing crash data.frame {crashes.df.nrow}'))
 ```
@@ -301,6 +311,13 @@ for (probe in names(probes.crashes)) {
   if (is.debug)
     break
 }
+
+for (probe in names(probes.crashes.ui)) {
+  probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
+  results.crashes[[probe_per_hour]] <- process_crash(crashes.ui, probe_per_hour, perc.high, bs_replicates)
+  if (is.debug)
+    break
+}
 ```
 
 ```{r crashes_count_agg, warning=FALSE}
@@ -308,6 +325,17 @@ client_count.stat <- function(x) length(which(!is.na(x) & x>0))
 for (probe in names(probes.crashes)) {
   probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
   results.crashes[[probe_client_count]] <- process_crash(crashes.df,
+                                                         probe, 
+                                                         perc.high,
+                                                         bs_replicates,
+                                                         stat = client_count.stat,
+                                                         name = probe_client_count)
+  if (is.debug)
+    break
+  
+for (probe in names(probes.crashes.ui)) {
+  probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
+  results.crashes[[probe_client_count]] <- process_crash(crashes.ui,
                                                          probe, 
                                                          perc.high,
                                                          bs_replicates,
