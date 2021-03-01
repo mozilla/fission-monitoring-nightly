@@ -332,7 +332,8 @@ for (probe in names(probes.crashes)) {
                                                          name = probe_client_count)
   if (is.debug)
     break
-  
+}
+
 for (probe in names(probes.crashes.ui)) {
   probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
   results.crashes[[probe_client_count]] <- process_crash(crashes.ui,
