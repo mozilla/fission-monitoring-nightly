@@ -283,6 +283,7 @@ for (probe in c(names(probes.scalar.sum), names(probes.scalar.max), names(probes
 
 ## OS: All
 ```{r crash_import}
+
 crashes <-  bq_project_query(project_id, build_crash_query(probes.crashes, slug, tbl.crashes, min_build_id))
 crashes.df <- bq_table_download(crashes) %>%
   as.data.table()
@@ -303,55 +304,23 @@ if (is.debug) print(glue('Processing crash data.frame {crashes.df.nrow}'))
 
 Process the per usage hour probes. 
 ```{r crashes_agg, warning=FALSE}
-results.crashes <- list()
-
-for (probe in names(probes.crashes)) {
-  probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
-  results.crashes[[probe_per_hour]] <- process_crash(crashes.df, probe_per_hour, perc.high, bs_replicates)
-  if (is.debug)
-    break
-}
-
-for (probe in names(probes.crashes.ui)) {
-  probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
-  results.crashes[[probe_per_hour]] <- process_crash(crashes.ui, probe_per_hour, perc.high, bs_replicates)
-  if (is.debug)
-    break
-}
+results.crashes <- calc_crash_stats(crashes.df, crashes.ui)
 ```
-
-```{r crashes_count_agg, warning=FALSE}
-client_count.stat <- function(x) length(which(!is.na(x) & x>0))
-for (probe in names(probes.crashes)) {
-  probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
-  results.crashes[[probe_client_count]] <- process_crash(crashes.df,
-                                                         probe, 
-                                                         perc.high,
-                                                         bs_replicates,
-                                                         stat = client_count.stat,
-                                                         name = probe_client_count)
-  if (is.debug)
-    break
-}
-
-for (probe in names(probes.crashes.ui)) {
-  probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
-  results.crashes[[probe_client_count]] <- process_crash(crashes.ui,
-                                                         probe, 
-                                                         perc.high,
-                                                         bs_replicates,
-                                                         stat = client_count.stat,
-                                                         name = probe_client_count)
-  if (is.debug)
-    break
-}
-```
-
 
 ## OS: Windows
 ```{r crash_import_win}
 crashes <-  bq_project_query(project_id, build_crash_query(probes.crashes, slug, tbl.crashes, min_build_id, os='Windows_NT'))
 crashes.df <- bq_table_download(crashes) %>%
+  as.data.table()
+
+crashes.ui <-  bq_project_query(project_id, 
+                                build_crash_ui_query(probes.crashes.ui, slug, 
+                                                  tbl.main, min_build_id, os='Windows')) %>%
+  bq_table_download() %>%
+     mutate(branch = case_when(
+        branch == 'fission-enabled' ~ 'enabled',
+         TRUE ~ 'disabled'
+       )) %>% 
   as.data.table()
 
 crashes.df.nrow <- nrow(crashes.df)
@@ -360,31 +329,8 @@ if (is.debug) print(glue('Processing crash data.frame {crashes.df.nrow}'))
 
 Process the per usage hour probes. 
 ```{r crashes_agg_win, warning=FALSE}
-results.crashes.win <- list()
-
-for (probe in names(probes.crashes)) {
-  probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
-  results.crashes.win[[probe_per_hour]] <- process_crash(crashes.df, probe_per_hour, perc.high, bs_replicates)
-  if (is.debug)
-    break
-}
+results.crashes.win <- calc_crash_stats(crashes.df, crashes.ui)
 ```
-
-```{r crashes_count_agg_win, warning=FALSE}
-client_count.stat <- function(x) length(which(!is.na(x) & x>0))
-for (probe in names(probes.crashes)) {
-  probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
-  results.crashes.win[[probe_client_count]] <- process_crash(crashes.df,
-                                                             probe, 
-                                                             perc.high,
-                                                             bs_replicates,
-                                                             stat = client_count.stat,
-                                                             name = probe_client_count)
-  if (is.debug)
-    break
-}
-```
-
 
 
 ## OS: Mac
@@ -393,35 +339,23 @@ crashes <-  bq_project_query(project_id, build_crash_query(probes.crashes, slug,
 crashes.df <- bq_table_download(crashes) %>%
   as.data.table()
 
+crashes.ui <-  bq_project_query(project_id, 
+                                build_crash_ui_query(probes.crashes.ui, slug, 
+                                                  tbl.main, min_build_id, os='Mac')) %>%
+  bq_table_download() %>%
+     mutate(branch = case_when(
+        branch == 'fission-enabled' ~ 'enabled',
+         TRUE ~ 'disabled'
+       )) %>% 
+  as.data.table()
+
 crashes.df.nrow <- nrow(crashes.df)
 if (is.debug) print(glue('Processing crash data.frame {crashes.df.nrow}'))
 ```
 
 Process the per usage hour probes. 
 ```{r crashes_agg_mac, warning=FALSE}
-results.crashes.osx <- list()
-
-for (probe in names(probes.crashes)) {
-  probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
-  results.crashes.osx[[probe_per_hour]] <- process_crash(crashes.df, probe_per_hour, perc.high, bs_replicates)
-  if (is.debug)
-    break
-}
-```
-
-```{r crashes_count_agg_mac, warning=FALSE}
-client_count.stat <- function(x) length(which(!is.na(x) & x>0))
-for (probe in names(probes.crashes)) {
-  probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
-  results.crashes.osx[[probe_client_count]] <- process_crash(crashes.df,
-                                                             probe, 
-                                                             perc.high,
-                                                             bs_replicates,
-                                                             stat = client_count.stat,
-                                                             name = probe_client_count)
-  if (is.debug)
-    break
-}
+results.crashes.osx <- calc_crash_stats(crashes.df, crashes.ui)
 ```
 
 
@@ -431,38 +365,25 @@ crashes <-  bq_project_query(project_id, build_crash_query(probes.crashes, slug,
 crashes.df <- bq_table_download(crashes) %>%
   as.data.table()
 
+crashes.ui <-  bq_project_query(project_id, 
+                                build_crash_ui_query(probes.crashes.ui, slug, 
+                                                  tbl.main, min_build_id, os='Linux')) %>%
+  bq_table_download() %>%
+     mutate(branch = case_when(
+        branch == 'fission-enabled' ~ 'enabled',
+         TRUE ~ 'disabled'
+       )) %>% 
+  as.data.table()
+
+
 crashes.df.nrow <- nrow(crashes.df)
 if (is.debug) print(glue('Processing crash data.frame {crashes.df.nrow}'))
 ```
 
 Process the per usage hour probes. 
 ```{r crashes_agg_linux, warning=FALSE}
-results.crashes.linux <- list()
-
-for (probe in names(probes.crashes)) {
-  probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
-  results.crashes.linux[[probe_per_hour]] <- process_crash(crashes.df, probe_per_hour, perc.high, bs_replicates)
-  if (is.debug)
-    break
-}
+results.crashes.linux <- calc_crash_stats(crashes.df, crashes.ui)
 ```
-
-```{r crashes_count_agg_linux, warning=FALSE}
-client_count.stat <- function(x) length(which(!is.na(x) & x>0))
-for (probe in names(probes.crashes)) {
-  probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
-  results.crashes.linux[[probe_client_count]] <- process_crash(crashes.df, 
-                                                             probe, 
-                                                         perc.high,
-                                                         bs_replicates,
-                                                         stat = client_count.stat,
-                                                         name = probe_client_count)
-  if (is.debug)
-    break
-}
-```
-
-
 
 # Export
 

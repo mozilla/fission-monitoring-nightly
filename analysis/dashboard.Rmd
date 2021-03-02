@@ -98,6 +98,7 @@ knitr::opts_chunk$set(  cache=FALSE,echo=FALSE,warning=FALSE,message=FALSE,eval=
 
 ```{r eval=TRUE}
 W <- 1000; H <- 200;
+crash_probes <- c(probes.crashes, probes.crashes.ui)
 ```
 
 ```{r eval=TRUE}
@@ -288,7 +289,7 @@ vw(list(
 ```{r crash_rates, eval=TRUE}
 # query analyzed per hour data
 crashes <- list()
-for (probe in names(probes.crashes)) {
+for (probe in names(crash_probes)) {
   probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
   crashes[[probe_per_hour]] <-
     bq_project_query(project_id,
@@ -329,7 +330,7 @@ vconcat = crash_plots) , TRUE)
 ```{r crash_rates_win, eval=TRUE}
 # query analyzed per hour data
 crashes <- list()
-for (probe in names(probes.crashes)) {
+for (probe in names(crash_probes)) {
   probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
   crashes[[probe_per_hour]] <-
     bq_project_query(project_id,
@@ -370,7 +371,7 @@ vconcat = crash_plots) , TRUE)
 ```{r crash_rates_mac, eval=TRUE}
 # query analyzed per hour data
 crashes <- list()
-for (probe in names(probes.crashes)) {
+for (probe in names(crash_probes)) {
   probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
   crashes[[probe_per_hour]] <-
     bq_project_query(project_id,
@@ -411,7 +412,7 @@ vconcat = crash_plots) , TRUE)
 ```{r crash_rates_linux, eval=TRUE}
 # query analyzed per hour data
 crashes <- list()
-for (probe in names(probes.crashes)) {
+for (probe in names(crash_probes)) {
   probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
   crashes[[probe_per_hour]] <-
     bq_project_query(project_id,
@@ -453,7 +454,7 @@ vconcat = crash_plots) , TRUE)
 ```{r crash_rates_nclients, eval=TRUE}
 # query analyzed per hour data
 crashes_client_count <- list()
-for (probe in names(probes.crashes)) {
+for (probe in names(crash_probes)) {
   probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
   crashes_client_count[[probe_client_count]] <-
     bq_project_query(project_id,
@@ -494,7 +495,7 @@ vconcat = crash_client_count_plots) , TRUE)
 ```{r crash_rates_nclients_win, eval=TRUE}
 # query analyzed per hour data
 crashes_client_count <- list()
-for (probe in names(probes.crashes)) {
+for (probe in names(crash_probes)) {
   probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
   crashes_client_count[[probe_client_count]] <-
     bq_project_query(project_id,
@@ -536,7 +537,7 @@ vconcat = crash_client_count_plots) , TRUE)
 ```{r crash_rates_nclients_mac, eval=TRUE}
 # query analyzed per hour data
 crashes_client_count <- list()
-for (probe in names(probes.crashes)) {
+for (probe in names(crash_probes)) {
   probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
   crashes_client_count[[probe_client_count]] <-
     bq_project_query(project_id,
@@ -578,7 +579,7 @@ vconcat = crash_client_count_plots) , TRUE)
 ```{r crash_rates_nclients_linux, eval=TRUE}
 # query analyzed per hour data
 crashes_client_count <- list()
-for (probe in names(probes.crashes)) {
+for (probe in names(crash_probes)) {
   probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
   crashes_client_count[[probe_client_count]] <-
     bq_project_query(project_id,

@@ -80,3 +80,55 @@ process_crash <- function(df, probe, perc.high, bs_replicates, stat=mean.narm, n
   })
   return(crashes.res)
 }
+
+calc_crash_stats <- function(crashes.df, crashes.ui=NULL){
+  results.crashes <- list()
+  
+  # Crashes per hour
+  for (probe in names(probes.crashes)) {
+    probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
+    results.crashes[[probe_per_hour]] <- process_crash(crashes.df, probe_per_hour, perc.high, bs_replicates)
+    if (is.debug)
+      break
+  }
+  
+  if (!is.null(crashes.ui)){
+    for (probe in names(probes.crashes.ui)) {
+      probe_per_hour <- paste(probe, '_PER_HOUR', sep = '')
+      results.crashes[[probe_per_hour]] <- process_crash(crashes.ui, probe_per_hour, perc.high, bs_replicates)
+      if (is.debug)
+        break
+    }
+  }
+  
+  # Distinct crashing client count
+  client_count.stat <- function(x) length(which(!is.na(x) & x>0))
+  
+  for (probe in names(probes.crashes)) {
+    probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
+    results.crashes[[probe_client_count]] <- process_crash(crashes.df,
+                                                           probe, 
+                                                           perc.high,
+                                                           bs_replicates,
+                                                           stat = client_count.stat,
+                                                           name = probe_client_count)
+    if (is.debug)
+      break
+  }
+  
+  if (!is.null(crashes.ui)){
+    for (probe in names(probes.crashes.ui)) {
+      probe_client_count <- paste(probe, '_CLIENT_COUNT', sep = '')
+      results.crashes[[probe_client_count]] <- process_crash(crashes.ui,
+                                                             probe, 
+                                                             perc.high,
+                                                             bs_replicates,
+                                                             stat = client_count.stat,
+                                                             name = probe_client_count)
+      if (is.debug)
+        break
+      
+    } 
+  }
+  return(results.crashes)
+}

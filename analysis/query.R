@@ -223,7 +223,7 @@ build_crash_ui_query <- function(probes.crashes, slug, tbl, min_build_id, os=NUL
   query_crashes <- paste('  ', 'SUM(COALESCE(', unlist(probes.crashes), ',0)) AS ', names(probes.crashes), sep = '', collapse = ',\n')
   query_crashes_per_hour <- paste('  SAFE_DIVIDE(', names(probes.crashes), ', USAGE_HOURS)', ' AS ', names(probes.crashes), '_PER_HOUR', sep='', collapse=',\n')
   additional_filters <- dplyr::case_when(
-    !is.null(os) ~ paste("AND os_name = '", os,"'", sep='') ,
+    !is.null(os) ~ paste("AND normalized_os = '", os,"'", sep='') ,
     TRUE ~ '')
   return(glue(crashes_query_base.,
               tbl = tbl,
