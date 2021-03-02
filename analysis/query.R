@@ -100,6 +100,31 @@ FROM crashes
 WHERE build_id >= {min_build_id}
 "
 
+crashes_ui_query_base <- "
+WITH crashes as (
+  SELECT 
+    client_id,
+    `moz-fx-data-shared-prod`.udf.get_key(environment.experiments,'{slug}').branch AS branch,
+    cast(substr(application.build_id,1,8) as int64) AS buildid,
+    SUM(LEAST(GREATEST(payload.info.subsession_length / 3600, 0), 24))  as USAGE_HOURS,
+    {query_crashes}
+  FROM {tbl}
+  WHERE
+    `moz-fx-data-shared-prod`.udf.get_key(environment.experiments,'{slug}').branch IS NOT NULL
+    AND SUBSTR(application.version, 0, 2) >= '88'
+  {additional_filters}
+  GROUP BY 1, 2, 3
+)
+SELECT 
+  client_id as id,
+  branch,
+  buildid as build_id,
+{query_crashes_probes},
+{query_crashes_per_hour}
+FROM crashes
+WHERE buildid >= {min_build_id}
+"
+
 scalar_query_base <- "
 WITH daily_agg as (
   SELECT 
@@ -183,6 +208,22 @@ build_crash_query <- function(probes.crashes, slug, tbl, min_build_id, os=NULL, 
   query_crashes_per_hour <- paste('  SAFE_DIVIDE(', names(probes.crashes), ', USAGE_HOURS)', ' AS ', names(probes.crashes), '_PER_HOUR', sep='', collapse=',\n')
   additional_filters <- dplyr::case_when(
     !is.null(os) ~ paste("AND os_name = '", os,"'", sep='') ,
+    TRUE ~ '')
+  return(glue(crashes_query_base.,
+              tbl = tbl,
+              query_crashes = query_crashes,
+              query_crashes_probes = paste('  ', names(probes.crashes), collapse=',\n'),
+              query_crashes_per_hour = query_crashes_per_hour,
+              min_build_id = min_build_id,
+              additional_filters = additional_filters
+  ))
+}
+
+build_crash_ui_query <- function(probes.crashes, slug, tbl, min_build_id, os=NULL, crashes_query_base. = crashes_ui_query_base){
+  query_crashes <- paste('  ', 'SUM(COALESCE(', unlist(probes.crashes), ',0)) AS ', names(probes.crashes), sep = '', collapse = ',\n')
+  query_crashes_per_hour <- paste('  SAFE_DIVIDE(', names(probes.crashes), ', USAGE_HOURS)', ' AS ', names(probes.crashes), '_PER_HOUR', sep='', collapse=',\n')
+  additional_filters <- dplyr::case_when(
+    !is.null(os) ~ paste("AND normalized_os = '", os,"'", sep='') ,
     TRUE ~ '')
   return(glue(crashes_query_base.,
               tbl = tbl,

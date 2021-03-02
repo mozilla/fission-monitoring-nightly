@@ -113,6 +113,12 @@ probes.crashes <- list(
   'SHUTDOWN_HANGS' = 'shutdown_hangs'
 )
 
+probes.crashes.ui <- list(
+  'UNSUBMITTED_UI_PRESENTED' = 'payload.processes.parent.scalars.dom_contentprocess_unsubmitted_ui_presented',
+  'CRASH_SUBFRAME_UI_PRESENTED' = 'payload.processes.parent.scalars.dom_contentprocess_crash_subframe_ui_presented',
+  'CRASH_TAB_UI_PRESENTED' = 'payload.processes.parent.scalars.dom_contentprocess_crash_tab_ui_presented'
+)
+
 # Bootstrapping
 
 bs_replicates <- 500
