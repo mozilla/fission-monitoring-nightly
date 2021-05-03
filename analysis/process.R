@@ -2,7 +2,7 @@ process_histograms <- function(probe, os=NULL) {
   hist.res <- tryCatch({
     print(paste(probe, ': ', os, sep=''))
     hist_query <-
-      build_hist_query(probes.hist[[probe]], slug, tbl.main, min_build_id, os=os)
+      build_hist_query(probes.hist[[probe]], slug, tbl.main, min_build_id, min_build_date, os=os)
     hist <- bq_project_query(project_id, hist_query)
     hist.df <- bq_table_download(hist) %>%
       mutate(branch = case_when(
