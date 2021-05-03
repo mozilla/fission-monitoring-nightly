@@ -98,7 +98,7 @@ print(glue('Debugging ETL pipeline: {is.debug}'))
 
 # Minimum build ID to process. Apply this as a query filter to retrieve only new, unprocessed, builds. 
 if (Sys.getenv("MIN_BUILD_ID") == ''){
-  min_build_id <- bq_project_query(project_id, build_min_build_id_query(tbl.main, num_build_dates)) %>%
+  min_build_id <- bq_project_query(project_id, build_min_build_id_query(tbl.crashes, num_build_dates)) %>%
     bq_table_download() %>%
     pull(max_build_date) %>% 
     format('%Y%m%d')
@@ -119,11 +119,9 @@ options(scipen = 20) # bigrquery bug: https://github.com/r-dbi/bigrquery/issues/
 Create crash table.
 
 ```{r crash_table_create}
-print(glue('Exporting {final.nrow} records'))
-
 export_tbl_chunks <- strsplit(tbl.crashes, '\\.')[[1]]
 
-min_build_date <- bq_project_query(project_id, build_min_build_id_query(tbl.main, num_build_dates)) %>%
+min_build_date <- bq_project_query(project_id, build_min_build_id_query(tbl.crashes, num_build_dates)) %>%
   bq_table_download() %>%
   pull(max_build_date) %>%
   format('%Y-%m-%d')
