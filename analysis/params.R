@@ -109,7 +109,7 @@ probes.crashes <- list(
   'PLUGIN_CRASHES' = 'plugin_crashes',
   'GMPLUGIN_CRASHES' = 'gmplugin_crashes',
   'OOM_CRASHES' = 'oom_crashes',
-  'SHUTDOWN_KILL_CRASHES' = 'shutdown_kill_crashes',
+  # 'SHUTDOWN_KILL_CRASHES' = 'shutdown_kill_crashes',
   'SHUTDOWN_HANGS' = 'shutdown_hangs'
 )
 

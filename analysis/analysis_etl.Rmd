@@ -182,12 +182,9 @@ for (probe in names(probes.hist.perc.95)) {
 ## OS: ALL
 
 ```{r scalar_import}
-scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, probes.hist.max, slug, tbl.main, min_build_id))
+scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, probes.hist.max, slug, tbl.main, 
+                                                          min_build_id, min_build_date))
 scalar.df <- bq_table_download(scalar) %>%
-     mutate(branch = case_when(
-        branch == 'fission-enabled' ~ 'enabled',
-         TRUE ~ 'disabled'
-       )) %>%
   as.data.table()
 
 scalar.df.nrow <- nrow(scalar.df)
@@ -210,12 +207,9 @@ for (probe in c(names(probes.scalar.sum), names(probes.scalar.max), names(probes
 ## OS: Windows
 
 ```{r scalar_import_win}
-scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, probes.hist.max, slug, tbl.main, min_build_id, os='Windows'))
+scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, probes.hist.max, slug, tbl.main, 
+                                                          min_build_id, min_build_date, os='Windows'))
 scalar.df <- bq_table_download(scalar) %>%
-     mutate(branch = case_when(
-        branch == 'fission-enabled' ~ 'enabled',
-         TRUE ~ 'disabled'
-       )) %>%
   as.data.table()
 
 scalar.df.nrow <- nrow(scalar.df)
@@ -238,12 +232,9 @@ for (probe in c(names(probes.scalar.sum), names(probes.scalar.max), names(probes
 ## OS: Mac
 
 ```{r scalar_import_osx}
-scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, probes.hist.max, slug, tbl.main, min_build_id, os='Mac'))
+scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, probes.hist.max, slug, tbl.main, 
+                                                          min_build_id, min_build_date, os='Mac'))
 scalar.df <- bq_table_download(scalar) %>%
-     mutate(branch = case_when(
-        branch == 'fission-enabled' ~ 'enabled',
-         TRUE ~ 'disabled'
-       )) %>%
   as.data.table()
 
 scalar.df.nrow <- nrow(scalar.df)
@@ -269,12 +260,9 @@ for (probe in c(names(probes.scalar.sum), names(probes.scalar.max), names(probes
 ## OS: Linux
 
 ```{r scalar_import_linux}
-scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, probes.hist.max, slug, tbl.main, min_build_id, os='Linux'))
+scalar <- bq_project_query(project_id, build_scalar_query(probes.scalar.sum, probes.scalar.max, probes.hist.max, slug, tbl.main, 
+                                                          min_build_id, min_build_date, os='Linux'))
 scalar.df <- bq_table_download(scalar) %>%
-     mutate(branch = case_when(
-        branch == 'fission-enabled' ~ 'enabled',
-         TRUE ~ 'disabled'
-       )) %>%
   as.data.table()
 
 scalar.df.nrow <- nrow(scalar.df)
@@ -314,10 +302,6 @@ crashes.ui <-  bq_project_query(project_id,
                                 build_crash_ui_query(probes.crashes.ui, slug, 
                                                   tbl.main, min_build_id)) %>%
   bq_table_download() %>%
-     mutate(branch = case_when(
-        branch == 'fission-enabled' ~ 'enabled',
-         TRUE ~ 'disabled'
-       )) %>% 
   as.data.table()
   
 crashes.df.nrow <- nrow(crashes.df)
@@ -339,10 +323,6 @@ crashes.ui <-  bq_project_query(project_id,
                                 build_crash_ui_query(probes.crashes.ui, slug, 
                                                   tbl.main, min_build_id, os='Windows')) %>%
   bq_table_download() %>%
-     mutate(branch = case_when(
-        branch == 'fission-enabled' ~ 'enabled',
-         TRUE ~ 'disabled'
-       )) %>% 
   as.data.table()
 
 crashes.df.nrow <- nrow(crashes.df)
@@ -365,10 +345,6 @@ crashes.ui <-  bq_project_query(project_id,
                                 build_crash_ui_query(probes.crashes.ui, slug, 
                                                   tbl.main, min_build_id, os='Mac')) %>%
   bq_table_download() %>%
-     mutate(branch = case_when(
-        branch == 'fission-enabled' ~ 'enabled',
-         TRUE ~ 'disabled'
-       )) %>% 
   as.data.table()
 
 crashes.df.nrow <- nrow(crashes.df)
@@ -391,10 +367,6 @@ crashes.ui <-  bq_project_query(project_id,
                                 build_crash_ui_query(probes.crashes.ui, slug, 
                                                   tbl.main, min_build_id, os='Linux')) %>%
   bq_table_download() %>%
-     mutate(branch = case_when(
-        branch == 'fission-enabled' ~ 'enabled',
-         TRUE ~ 'disabled'
-       )) %>% 
   as.data.table()
 
 

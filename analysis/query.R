@@ -1,5 +1,5 @@
 library(glue)
-# source('query_strings.R')
+source('query_strings.R')
 
 #### Query Helpers ####
 build_crash_table <- function(min_build_id, min_build_date){
@@ -67,7 +67,8 @@ build_crash_ui_query <- function(probes.crashes, slug, tbl, min_build_id, os=NUL
   ))
 }
 
-build_scalar_query <- function(probes.scalar.sum, probes.scalar.max, probes.hist.max, slug, tbl, min_build_id, os=NULL, scalar_query_base. = scalar_query_base){
+build_scalar_query <- function(probes.scalar.sum, probes.scalar.max, probes.hist.max, slug, tbl, min_build_id, min_build_date, 
+                               os=NULL, scalar_query_base. = scalar_query_base){
   query_scalar_sum <- dplyr::case_when(
     !is.null(probes.scalar.sum) ~ paste(paste('  ', 'SUM(COALESCE(', unlist(probes.scalar.sum), ', 0)) AS ', names(probes.scalar.sum), sep = '', collapse = ',\n'), ','),
     TRUE ~ ''
@@ -110,6 +111,7 @@ build_scalar_query <- function(probes.scalar.sum, probes.scalar.max, probes.hist
               query_hist_max_2 = query_hist_max_2,
               tbl = tbl,
               min_build_id = min_build_id,
+              min_build_date = min_build_date,
               additional_filters = additional_filters
   )
   )
