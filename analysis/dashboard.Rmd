@@ -733,8 +733,7 @@ vw(list(
 ### About
 
 The sample size is not enough to detect small changes but choosing more would
-use up all the appropriate population. This experiment will continue to enroll for
-about a year.
+use up all the appropriate population. 
 
 
 #### ETL
@@ -742,7 +741,7 @@ about a year.
 An single step AirFlow runs everyday. The initial step generates a temporary table:
 
 
-* Filters `moz-fx-data-shared-prod.telemetry.crashes` to only those enrolled in the experiment. Performs subsequent aggregations at the client and `submission date` for specific crash types`.
+* Filters `moz-fx-data-shared-prod.telemetry.crashes` to only those enrolled in the rollout Performs subsequent aggregations at the client and `submission date` for specific crash types`.
    - Output Table: `r tbl.crashes`
    
 The [second step analyzes](https://github.com/mozilla/fission-monitoring-nightly/blob/main/analysis_etl.Rmd) these tables for specific probes defined [here](https://github.com/mozilla/fission-monitoring-nightly/blob/main/params.R#L24).
