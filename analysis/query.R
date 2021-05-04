@@ -8,7 +8,7 @@ build_crash_table <- function(min_build_id, min_build_date){
               min_build_date = min_build_date))
 }
 
-build_main_query <- function(probes.hist, slug, tbl){ ##TODO: Add in scalar probes
+build_main_query <- function(probes.hist, slug, tbl){ 
   query_hist = dplyr::case_when(
     !is.null(probes.hist) ~ paste('  ', 'mozfun.hist.extract(', unlist(probes.hist), ").values", ' AS ', names(probes.hist), sep = '', collapse = ',\n'),
     TRUE ~ ''
@@ -51,6 +51,8 @@ build_crash_query <- function(probes.crashes, slug, tbl, min_build_id, os=NULL, 
   ))
 }
 
+
+# TODO: Add in min_build_date arg for consistency
 build_crash_ui_query <- function(probes.crashes, slug, tbl, min_build_id, os=NULL, crashes_query_base. = crashes_ui_query_base){
   query_crashes <- paste('  ', 'SUM(COALESCE(', unlist(probes.crashes), ',0)) AS ', names(probes.crashes), sep = '', collapse = ',\n')
   query_crashes_per_hour <- paste('  SAFE_DIVIDE(', names(probes.crashes), ', USAGE_HOURS)', ' AS ', names(probes.crashes), '_PER_HOUR', sep='', collapse=',\n')
