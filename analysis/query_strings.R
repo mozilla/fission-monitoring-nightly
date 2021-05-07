@@ -290,8 +290,9 @@ GROUP BY 1, 2, 3
 "
 
 build_id_query_base <- "
-SELECT DATE_SUB(MAX(submission_date), INTERVAL {num_build_dates} DAY) as max_build_date
+SELECT DATE_SUB(MAX(DATE(submission_timestamp)), INTERVAL {num_build_dates} DAY) as max_build_date
 FROM {tbl} 
+WHERE DATE(SUBMISSION_TIMESTAMP) >= DATE_SUB(CURRENT_DATE(), INTERVAL {num_build_dates} DAY)
 "
 
 delete_build_records_query_base <- "
