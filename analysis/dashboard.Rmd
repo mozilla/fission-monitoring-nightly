@@ -742,7 +742,7 @@ use up all the appropriate population.
 An single step AirFlow runs everyday. The initial step generates a temporary table:
 
 
-* Filters `r tbl.crashes.raw` to only those enrolled in the rollout Performs subsequent aggregations at the client and `submission date` for specific crash types`.
+* Filters `r tbl.crash.raw` to only those enrolled in the rollout Performs subsequent aggregations at the client and `submission date` for specific crash types`.
    - Output Table: `r tbl.crashes`
    
 The [second step analyzes](https://github.com/mozilla/fission-monitoring-nightly/blob/main/analysis_etl.Rmd) this table, and `r tbl.main` for specific probes defined [here](https://github.com/mozilla/fission-monitoring-nightly/blob/main/params.R#L24).
