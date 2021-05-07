@@ -84,8 +84,10 @@ project_id <- Sys.getenv("BQ_BILLING_PROJECT_ID")
 print(glue('BigQuery Billing project: {project_id}'))
 tbl.main <- Sys.getenv('BQ_INPUT_MAIN_TABLE')
 print(glue('Import - Main table: {tbl.main}'))
-tbl.crashes <- Sys.getenv('BQ_INPUT_CRASH_TABLE')
-print(glue('Import - Crash table: {tbl.crashes}'))
+tbl.crash.raw <- Sys.getenv('BQ_INPUT_CRASH_TABLE')
+print(glue('Import - Crash table: {tbl.crash.raw}'))
+tbl.crashes <- Sys.getenv('BQ_TMP_CRASH_TABLE')
+print(glue('Import - Crash temporary aggregation table: {tbl.crashes}'))
 tbl.analyzed <- Sys.getenv('BQ_OUTPUT_TABLE')
 print(glue('Export - Analyzed table: {tbl.analyzed}'))
 
@@ -127,7 +129,8 @@ min_build_date <- bq_project_query(project_id, build_min_build_id_query(tbl.cras
   format('%Y-%m-%d')
 
 bq_project_query(project_id, 
-                 build_crash_table(min_build_id = min_build_id, min_build_date = min_build_date), 
+                 build_crash_table(tbl.main = tbl.main, tbl.crash.raw = tbl.crash.raw, 
+                                   min_build_id = min_build_id, min_build_date = min_build_date), 
                  destination_table = bq_table(export_tbl_chunks[1], export_tbl_chunks[2], export_tbl_chunks[3]),
                  write_disposition = "WRITE_TRUNCATE"
                  )

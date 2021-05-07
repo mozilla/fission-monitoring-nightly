@@ -42,7 +42,7 @@ WITH crash_ping_data AS (
     0 AS plugin_crashes,
     0 AS gmplugin_crashes
   FROM
-    `moz-fx-data-shared-prod.telemetry.crash`
+    `{tbl.crash.raw}`
   WHERE
     normalized_channel = 'nightly'
     AND cast(substr(environment.build.build_id, 1, 8) as int64) >= {min_build_id}
@@ -97,7 +97,7 @@ main_ping_data AS (
       0
     ) AS gmplugin_crashes
   FROM
-    `moz-fx-data-shared-prod.telemetry.main_nightly`
+    `{tbl.main}`
   WHERE cast(substr(application.build_id, 1, 8) as int64) >= {min_build_id}
   AND DATE(submission_timestamp) >= '{min_build_date}'
 ),

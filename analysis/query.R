@@ -2,8 +2,10 @@ library(glue)
 source('query_strings.R')
 
 #### Query Helpers ####
-build_crash_table <- function(min_build_id, min_build_date){
+build_crash_table <- function(tbl.main, tbl.crash.raw, min_build_id, min_build_date){
   return(glue(crash_create_base,
+              tbl.main = tbl.main,
+              tbl.crash.raw = tbl.crash.raw,
               min_build_id = min_build_id,
               min_build_date = min_build_date))
 }

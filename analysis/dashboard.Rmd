@@ -104,7 +104,8 @@ crash_probes <- c(probes.crashes, probes.crashes.ui)
 ```{r eval=TRUE}
 project_id <- Sys.getenv("BQ_BILLING_PROJECT_ID")
 tbl.main <- Sys.getenv('BQ_INPUT_MAIN_TABLE')
-tbl.crashes <- Sys.getenv('BQ_INPUT_CRASH_TABLE')
+tbl.crash.raw <- Sys.getenv('BQ_INPUT_CRASH_TABLE')
+tbl.crashes <- Sys.getenv('BQ_TMP_CRASH_TABLE')
 tbl.analyzed <- Sys.getenv('BQ_OUTPUT_TABLE')
 ```
 
@@ -741,11 +742,11 @@ use up all the appropriate population.
 An single step AirFlow runs everyday. The initial step generates a temporary table:
 
 
-* Filters `moz-fx-data-shared-prod.telemetry.crashes` to only those enrolled in the rollout Performs subsequent aggregations at the client and `submission date` for specific crash types`.
+* Filters `r tbl.crashes.raw` to only those enrolled in the rollout Performs subsequent aggregations at the client and `submission date` for specific crash types`.
    - Output Table: `r tbl.crashes`
    
-The [second step analyzes](https://github.com/mozilla/fission-monitoring-nightly/blob/main/analysis_etl.Rmd) these tables for specific probes defined [here](https://github.com/mozilla/fission-monitoring-nightly/blob/main/params.R#L24).
-It filters these 1st stage ETL tables to only process the last `r num_build_dates` of Nightly builds. In addition, it calculates means, relative difference of means, 
+The [second step analyzes](https://github.com/mozilla/fission-monitoring-nightly/blob/main/analysis_etl.Rmd) this table, and `r tbl.main` for specific probes defined [here](https://github.com/mozilla/fission-monitoring-nightly/blob/main/params.R#L24).
+The tables are queried for only the last `r num_build_dates` of Nightly builds. In addition, it calculates means, relative difference of means, 
 and confidence intervals using bootstrapping (`r bs_replicates` samples). All metrics are per client and each client has the same weight. For histogram aggregation, 
 the method employed is that same as used in GLAM:  
 
