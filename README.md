@@ -1,3 +1,5 @@
+> :warning: This repository is archived per https://bugzilla.mozilla.org/show_bug.cgi?id=1738859
+
 Code-base to generate [monitoring dashboard](https://protosaur.dev/fission-experiment-monitoring-dashboard/dashboard/dashboard.html) for ongoing [Fission Nightly "experiment"](https://experimenter.services.mozilla.com/experiments/fission-nightly/). 
 
 # Process
